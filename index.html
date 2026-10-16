@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Chunga Lab IT Support: network installation, business Wi-Fi and access points, WAN/LAN design and expansion, VoIP and IT solutions for schools, organizations, offices and growing SMEs in Nairobi and its environs.">
+  <title>Chunga Lab IT Support</title>
+  <style>
+    :root {
+      --navy: #0f172a;
+      --indigo: #4f46e5;
+      --cyan: #06b6d4;
+      --bg: #f8fafc;
+      --card: #ffffff;
+      --text: #1e293b;
+      --muted: #475569;
+      --wa: #0f7a3d;
+      --wa-hover: #0b6130;
+      --heading: #0f172a;
+      --inner: #ffffff;
+      --border: #e2e8f0;
+      --net: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cg stroke='%2306b6d4' stroke-opacity='.6' stroke-width='1' fill='none'%3E%3Cpath d='M30 40L110 20L190 70L150 150L70 120Z M70 120L30 190 M150 150L120 200'/%3E%3C/g%3E%3Cg fill='%2306b6d4' fill-opacity='.9'%3E%3Ccircle cx='30' cy='40' r='2.5'/%3E%3Ccircle cx='110' cy='20' r='2.5'/%3E%3Ccircle cx='190' cy='70' r='2.5'/%3E%3Ccircle cx='150' cy='150' r='2.5'/%3E%3Ccircle cx='70' cy='120' r='2.5'/%3E%3Ccircle cx='30' cy='190' r='2.5'/%3E%3Ccircle cx='120' cy='200' r='2.5'/%3E%3C/g%3E%3C/svg%3E");
+      color-scheme: light dark;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #0b1120;
+        --card: #1e293b;
+        --text: #f1f5f9;
+        --muted: #cbd5e1;
+        --heading: #ffffff;
+        --inner: #0f172a;
+        --border: #475569;
+      }
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      background-color: var(--bg);
+      background-image: var(--net);
+      color: var(--text);
+      line-height: 1.6;
+    }
+    header {
+      position: relative;
+      overflow: hidden;
+      background: linear-gradient(135deg, var(--navy), var(--indigo));
+      color: #fff;
+      text-align: center;
+      padding: 3.5rem 1.25rem 5rem;
+    }
+    header::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='260' height='260'%3E%3Cg stroke='%23cffafe' stroke-opacity='.2' stroke-width='1' fill='none'%3E%3Cpath d='M25 35L105 15L190 60L235 140L205 225L120 235L40 190L70 95L25 35 M190 60L150 120L70 95 M150 120L120 235 M235 140L150 120'/%3E%3C/g%3E%3Cg fill='%23cffafe' fill-opacity='.4'%3E%3Ccircle cx='25' cy='35' r='2.5'/%3E%3Ccircle cx='105' cy='15' r='2.5'/%3E%3Ccircle cx='190' cy='60' r='2.5'/%3E%3Ccircle cx='235' cy='140' r='2.5'/%3E%3Ccircle cx='150' cy='120' r='2.5'/%3E%3Ccircle cx='70' cy='95' r='2.5'/%3E%3Ccircle cx='40' cy='190' r='2.5'/%3E%3Ccircle cx='120' cy='235' r='2.5'/%3E%3Ccircle cx='205' cy='225' r='2.5'/%3E%3C/g%3E%3C/svg%3E");
+      -webkit-mask-image: linear-gradient(to right, #000 calc(50% - 28rem), transparent calc(50% - 21rem), transparent calc(50% + 21rem), #000 calc(50% + 28rem));
+      mask-image: linear-gradient(to right, #000 calc(50% - 28rem), transparent calc(50% - 21rem), transparent calc(50% + 21rem), #000 calc(50% + 28rem));
+      pointer-events: none;
+    }
+    header > * { position: relative; }
+    header .brand {
+      font-size: 0.9rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: #67e8f9;
+      margin-bottom: 1rem;
+    }
+    header h1 { font-size: clamp(2rem, 7vw, 3.2rem); line-height: 1.2; color: #ffffff; text-shadow: 0 2px 8px rgba(15, 23, 42, 0.35); }
+    header p.sub {
+      max-width: 36rem;
+      margin: 1rem auto 1.75rem;
+      color: #e2e8f0;
+      font-size: 1.1rem;
+    }
+    .btn {
+      display: inline-block;
+      background: var(--wa);
+      color: #fff;
+      text-decoration: none;
+      font-weight: 700;
+      font-size: 1.1rem;
+      padding: 1rem 2rem;
+      min-height: 3rem;
+      border-radius: 999px;
+      border: 2px solid #fff;
+      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.25);
+      transition: background 0.2s, transform 0.2s;
+    }
+    .btn:hover, .btn:focus-visible { background: var(--wa-hover); transform: translateY(-2px); }
+    .note { margin-top: 0.75rem; color: #e2e8f0; font-size: 0.95rem; }
+    main {
+      max-width: 52rem;
+      margin: -2.5rem auto 0;
+      position: relative;
+      z-index: 1;
+      padding: 0 1.25rem 3rem;
+    }
+    section {
+      background: var(--card);
+      border-radius: 1rem;
+      padding: 1.5rem 1.25rem;
+      margin-bottom: 1.25rem;
+      box-shadow: 0 10px 25px rgba(15, 23, 42, 0.08);
+    }
+    h2 { font-size: 1.4rem; color: var(--heading); margin-bottom: 0.75rem; }
+    section p { color: var(--text); }
+    ul, ol { padding-left: 1.25rem; }
+    li { margin-bottom: 0.75rem; }
+    li:last-child { margin-bottom: 0; }
+    li span { color: var(--muted); }
+    .service-cards { display: grid; grid-template-columns: 1fr; gap: 1rem; }
+    .service-card {
+      background: var(--inner);
+      border: 1px solid var(--border);
+      border-top: 4px solid var(--cyan);
+      border-radius: 0.75rem;
+      padding: 1.25rem;
+      display: block;
+      color: inherit;
+      text-decoration: none;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .service-card:link, .service-card:visited, .service-card:active {
+      color: var(--text);
+      text-decoration: none;
+    }
+    .service-card:link strong, .service-card:visited strong, .service-card:hover strong, .service-card:active strong { color: var(--heading); }
+    .service-card:link span, .service-card:visited span, .service-card:hover span, .service-card:active span { color: var(--muted); }
+    .service-card:visited .icon { color: #fff; }
+    .service-card:visited .icon svg { stroke: #fff; }
+    .service-card:hover, .service-card:focus-visible {
+      transform: translateY(-4px);
+      box-shadow: 0 10px 25px rgba(15, 23, 42, 0.18);
+    }
+    .service-card .icon {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 3rem;
+      height: 3rem;
+      margin-bottom: 0.75rem;
+      border-radius: 0.75rem;
+      background: linear-gradient(135deg, var(--navy), var(--indigo));
+      color: #fff;
+    }
+    .service-card .icon svg {
+      width: 1.6rem;
+      height: 1.6rem;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+    .service-card strong { display: block; color: var(--heading); margin-bottom: 0.25rem; }
+    .service-card span { color: var(--muted); }
+    .split { display: grid; grid-template-columns: 1fr; gap: 1.25rem; margin-bottom: 1.25rem; }
+    .split section { margin-bottom: 0; }
+    .who-list { list-style: none; padding-left: 0; }
+    .who-list li { display: flex; align-items: flex-start; gap: 0.85rem; }
+    .who-list .icon {
+      flex: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 2.5rem;
+      height: 2.5rem;
+      border-radius: 0.65rem;
+      background: linear-gradient(135deg, var(--navy), var(--indigo));
+      color: #fff;
+    }
+    .who-list .icon svg {
+      width: 1.35rem;
+      height: 1.35rem;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+    .who-list strong { display: block; color: var(--heading); }
+    .steps { list-style: none; padding-left: 0; display: grid; grid-template-columns: 1fr; gap: 1rem; counter-reset: step; }
+    .steps > li {
+      counter-increment: step;
+      margin-bottom: 0;
+      background: var(--inner);
+      border: 1px solid var(--border);
+      border-top: 4px solid var(--cyan);
+      border-radius: 0.75rem;
+      padding: 1.25rem;
+    }
+    .steps > li::before {
+      content: counter(step);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 3rem;
+      height: 3rem;
+      margin-bottom: 0.75rem;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--navy), var(--indigo));
+      color: #fff;
+      font-size: 1.5rem;
+      font-weight: 800;
+    }
+    .steps strong { display: block; color: var(--heading); margin-bottom: 0.25rem; }
+    .steps { align-items: start; }
+    .steps > li { position: relative; transition: transform 0.2s, box-shadow 0.2s; }
+    .steps > li:hover, .steps > li:has(summary:focus-visible) {
+      transform: translateY(-4px);
+      box-shadow: 0 10px 25px rgba(15, 23, 42, 0.18);
+    }
+    .steps summary { list-style: none; cursor: pointer; padding-right: 1.5rem; }
+    .steps summary::-webkit-details-marker { display: none; }
+    .steps summary:focus-visible { outline: 2px solid var(--indigo); outline-offset: 4px; border-radius: 0.25rem; }
+    .steps summary::after {
+      content: "";
+      position: absolute;
+      top: 2.1rem;
+      right: 1.4rem;
+      width: 0.6rem;
+      height: 0.6rem;
+      border-right: 2px solid var(--muted);
+      border-bottom: 2px solid var(--muted);
+      transform: rotate(45deg);
+      transition: transform 0.2s;
+    }
+    .steps details[open] summary::after { transform: rotate(225deg); top: 2.3rem; }
+    .steps details ul { margin-top: 0.75rem; color: var(--muted); }
+    .steps details li { margin-bottom: 0.35rem; }
+    .steps details li:last-child { margin-bottom: 0; }
+    .cta { text-align: center; }
+    .cta .btn { margin: 0.5rem 0 1.5rem; border-color: var(--wa); }
+    .closing { color: var(--muted); max-width: 40rem; margin: 0 auto; }
+    @media (min-width: 40rem) {
+      header { padding: 5rem 1.5rem 6rem; }
+      main { padding: 0 1.5rem 4rem; }
+      section { padding: 2rem; margin-bottom: 1.75rem; }
+      .split { margin-bottom: 1.75rem; }
+      .service-cards { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (min-width: 60rem) {
+      .service-cards { grid-template-columns: repeat(3, 1fr); }
+      .split { grid-template-columns: repeat(2, 1fr); gap: 1.75rem; }
+      .split section { display: flex; flex-direction: column; }
+      .split ul { flex: 1; display: flex; flex-direction: column; justify-content: space-between; }
+      .split li { margin-bottom: 0; }
+      .steps { grid-template-columns: repeat(3, 1fr); }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="brand">Chunga Lab IT Support</div>
+    <h1>Your trusted IT partner</h1>
+    <p class="sub">We help businesses, schools and organisations keep their technology secure and running smoothly.</p>
+    <a class="btn" href="https://wa.me/254724947213?text=Hi%20Chunga%20Lab%2C%20I%27d%20like%20a%20free%20consultation%20about%20" target="_blank" rel="noopener">Chat with us on WhatsApp</a>
+    <p class="note">Free consultation. No pressure.</p>
+  </header>
+
+  <main>
+    <section>
+      <h2>What we do</h2>
+      <p>Technology should help you work, not get in the way. We take care of your internet, Wi-Fi, phones and IT support, so you can focus on your business, your students or your team.</p>
+    </section>
+
+    <section>
+      <h2>Our services</h2>
+      <div class="service-cards">
+        <a class="service-card" href="https://wa.me/254724947213?text=Hi%20Chunga%20Lab%2C%20I%27d%20like%20a%20free%20consultation%20about%20Reliable%20internet%20and%20network%20setup." target="_blank" rel="noopener">
+          <div class="icon"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><ellipse cx="12" cy="12" rx="4" ry="9"/></svg></div>
+          <strong>Reliable internet and network setup</strong><span>A connection your team can count on, so work doesn't stop.</span>
+        </a>
+        <a class="service-card" href="https://wa.me/254724947213?text=Hi%20Chunga%20Lab%2C%20I%27d%20like%20a%20free%20consultation%20about%20Better%20Wi-Fi%20coverage." target="_blank" rel="noopener">
+          <div class="icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 9a15 15 0 0 1 20 0"/><path d="M5 12.5a10.5 10.5 0 0 1 14 0"/><path d="M8.5 16a5.5 5.5 0 0 1 7 0"/><circle cx="12" cy="19.5" r="0.8"/></svg></div>
+          <strong>Better Wi-Fi coverage</strong><span>Strong signal in every room, so staff and visitors stay connected.</span>
+        </a>
+        <a class="service-card" href="https://wa.me/254724947213?text=Hi%20Chunga%20Lab%2C%20I%27d%20like%20a%20free%20consultation%20about%20Business%20phone%20systems." target="_blank" rel="noopener">
+          <div class="icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.6 10.8a15.1 15.1 0 0 0 6.6 6.6l2.2-2.2a1 1 0 0 1 1-.25 11.4 11.4 0 0 0 3.6.57 1 1 0 0 1 1 1V20a1 1 0 0 1-1 1A17 17 0 0 1 3 4a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1c0 1.25.2 2.45.57 3.6a1 1 0 0 1-.25 1z"/></svg></div>
+          <strong>Business phone systems</strong><span>Clear, professional calls that help you never miss a customer.</span>
+        </a>
+        <a class="service-card" href="https://wa.me/254724947213?text=Hi%20Chunga%20Lab%2C%20I%27d%20like%20a%20free%20consultation%20about%20Ongoing%20IT%20support." target="_blank" rel="noopener">
+          <div class="icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 14v-2a8 8 0 0 1 16 0v2"/><rect x="2.5" y="14" width="4" height="6" rx="1.5"/><rect x="17.5" y="14" width="4" height="6" rx="1.5"/><path d="M19.5 20c0 1.5-2 2-5 2"/></svg></div>
+          <strong>Ongoing IT support</strong><span>Help when something goes wrong, so small problems don't become big delays.</span>
+        </a>
+        <a class="service-card" href="https://wa.me/254724947213?text=Hi%20Chunga%20Lab%2C%20I%27d%20like%20a%20free%20consultation%20about%20Staff%20cyber%20safety%20training." target="_blank" rel="noopener">
+          <div class="icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5 4 5.5v6c0 5 3.4 8.6 8 10 4.6-1.4 8-5 8-10v-6z"/><path d="m8.5 12 2.5 2.5 4.5-5"/></svg></div>
+          <strong>Staff cyber safety training</strong><span>Your team learns to spot scams, so your business and data stay protected.</span>
+        </a>
+      </div>
+    </section>
+
+    <div class="split">
+    <section>
+      <h2>Who we help</h2>
+      <ul class="who-list">
+        <li>
+          <div class="icon"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="3" width="14" height="18" rx="1"/><path d="M9 7h2M13 7h2M9 11h2M13 11h2M10 21v-4h4v4"/></svg></div>
+          <div><strong>Businesses</strong><span>Offices and shops that need their internet, phones and computers to work smoothly.</span></div>
+        </li>
+        <li>
+          <div class="icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m2 9 10-5 10 5-10 5z"/><path d="M6 11.5V16c0 1.5 2.7 3 6 3s6-1.5 6-3v-4.5"/><path d="M22 9v6"/></svg></div>
+          <div><strong>Schools</strong><span>Classrooms, staffrooms and labs that need reliable Wi-Fi.</span></div>
+        </li>
+        <li>
+          <div class="icon"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3"/><path d="M3 20v-1a5 5 0 0 1 10 0v1"/><circle cx="17" cy="9" r="2.5"/><path d="M16 14.2a4.5 4.5 0 0 1 5 4.3V20"/></svg></div>
+          <div><strong>Organisations</strong><span>Teams of any size that need IT they can count on.</span></div>
+        </li>
+        <li>
+          <div class="icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 19V6"/><path d="M3 15h18v4"/><path d="M21 15v-2a3 3 0 0 0-3-3h-7v5"/><circle cx="7" cy="11.5" r="1.8"/></svg></div>
+          <div><strong>Hotels</strong><span>Hotels that need their guests to have a comfortable stay.</span></div>
+        </li>
+        <li>
+          <div class="icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2v5M10 4h4"/><path d="M6 21V12l6-4 6 4v9z"/><path d="M10 21v-4a2 2 0 0 1 4 0v4"/></svg></div>
+          <div><strong>Churches</strong><span>Churches that want a reliable network during their online streaming services.</span></div>
+        </li>
+        <li>
+          <div class="icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.5A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/></svg></div>
+          <div><strong>NGOs</strong><span>NGOs that don't want to worry about IT.</span></div>
+        </li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>Why choose us</h2>
+      <ul>
+        <li><strong>Plain language.</strong> We explain things simply, with no confusing jargon.</li>
+        <li><strong>Listening first.</strong> We start by understanding how you work and what you need.</li>
+        <li><strong>Honest advice.</strong> We recommend what fits your needs, not the most expensive option.</li>
+        <li><strong>Clear communication.</strong> You'll know what we're doing and what to expect.</li>
+        <li><strong>Here when you need us.</strong> One team to call on for setup, support and training.</li>
+      </ul>
+    </section>
+    </div>
+
+    <section>
+      <h2>How it works</h2>
+      <ol class="steps">
+        <li><details>
+          <summary><strong>Say hello on WhatsApp.</strong> Tell us what you need.</summary>
+          <ul>
+            <li>Tap the button and a message is ready for you to send.</li>
+            <li>Tell us a little about what you need, in your own words.</li>
+          </ul>
+        </details></li>
+        <li><details>
+          <summary><strong>Free consultation.</strong> We listen and suggest the right next steps.</summary>
+          <ul>
+            <li>We ask questions to understand how you work and what you need.</li>
+            <li>We suggest the right next steps.</li>
+            <li>You get honest advice and no pressure.</li>
+          </ul>
+        </details></li>
+        <li><details>
+          <summary><strong>We get to work.</strong> We set things up or fix them, and keep you updated.</summary>
+          <ul>
+            <li>We carry out the work we agreed on.</li>
+            <li>We keep you informed, so you know what we're doing and what to expect.</li>
+          </ul>
+        </details></li>
+      </ol>
+    </section>
+
+    <section class="cta">
+      <h2>Ready to talk? Your first consultation is free.</h2>
+      <a class="btn" href="https://wa.me/254724947213?text=Hi%20Chunga%20Lab%2C%20I%27d%20like%20a%20free%20consultation%20about%20" target="_blank" rel="noopener">Chat with us on WhatsApp</a>
+      <p class="closing">Technology problems shouldn't slow your business down. We help businesses stay connected, secure and productive with reliable IT solutions and support.</p>
+    </section>
+  </main>
+</body>
+</html>
