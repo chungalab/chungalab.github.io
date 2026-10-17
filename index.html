@@ -3,260 +3,25 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="Chunga Lab IT Support: network installation, business Wi-Fi and access points, WAN/LAN design and expansion, VoIP and IT solutions for schools, organizations, offices and growing SMEs in Nairobi and its environs.">
+  <meta name="description" content="Chunga Lab IT Support: network installation, business Wi-Fi and access points, WAN/LAN design and expansion, VoIP and IT solutions for schools, organisations, offices and growing SMEs in Nairobi and its environs.">
   <title>Chunga Lab IT Support</title>
-  <style>
-    :root {
-      --navy: #0f172a;
-      --indigo: #4f46e5;
-      --cyan: #06b6d4;
-      --bg: #f8fafc;
-      --card: #ffffff;
-      --text: #1e293b;
-      --muted: #475569;
-      --wa: #0f7a3d;
-      --wa-hover: #0b6130;
-      --heading: #0f172a;
-      --inner: #ffffff;
-      --border: #e2e8f0;
-      --net: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cg stroke='%2306b6d4' stroke-opacity='.6' stroke-width='1' fill='none'%3E%3Cpath d='M30 40L110 20L190 70L150 150L70 120Z M70 120L30 190 M150 150L120 200'/%3E%3C/g%3E%3Cg fill='%2306b6d4' fill-opacity='.9'%3E%3Ccircle cx='30' cy='40' r='2.5'/%3E%3Ccircle cx='110' cy='20' r='2.5'/%3E%3Ccircle cx='190' cy='70' r='2.5'/%3E%3Ccircle cx='150' cy='150' r='2.5'/%3E%3Ccircle cx='70' cy='120' r='2.5'/%3E%3Ccircle cx='30' cy='190' r='2.5'/%3E%3Ccircle cx='120' cy='200' r='2.5'/%3E%3C/g%3E%3C/svg%3E");
-      color-scheme: light dark;
-    }
-    @media (prefers-color-scheme: dark) {
-      :root {
-        --bg: #0b1120;
-        --card: #1e293b;
-        --text: #f1f5f9;
-        --muted: #cbd5e1;
-        --heading: #ffffff;
-        --inner: #0f172a;
-        --border: #475569;
-      }
-    }
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body {
-      font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-      background-color: var(--bg);
-      background-image: var(--net);
-      color: var(--text);
-      line-height: 1.6;
-    }
-    header {
-      position: relative;
-      overflow: hidden;
-      background: linear-gradient(135deg, var(--navy), var(--indigo));
-      color: #fff;
-      text-align: center;
-      padding: 3.5rem 1.25rem 5rem;
-    }
-    header::before {
-      content: "";
-      position: absolute;
-      inset: 0;
-      background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='260' height='260'%3E%3Cg stroke='%23cffafe' stroke-opacity='.2' stroke-width='1' fill='none'%3E%3Cpath d='M25 35L105 15L190 60L235 140L205 225L120 235L40 190L70 95L25 35 M190 60L150 120L70 95 M150 120L120 235 M235 140L150 120'/%3E%3C/g%3E%3Cg fill='%23cffafe' fill-opacity='.4'%3E%3Ccircle cx='25' cy='35' r='2.5'/%3E%3Ccircle cx='105' cy='15' r='2.5'/%3E%3Ccircle cx='190' cy='60' r='2.5'/%3E%3Ccircle cx='235' cy='140' r='2.5'/%3E%3Ccircle cx='150' cy='120' r='2.5'/%3E%3Ccircle cx='70' cy='95' r='2.5'/%3E%3Ccircle cx='40' cy='190' r='2.5'/%3E%3Ccircle cx='120' cy='235' r='2.5'/%3E%3Ccircle cx='205' cy='225' r='2.5'/%3E%3C/g%3E%3C/svg%3E");
-      -webkit-mask-image: linear-gradient(to right, #000 calc(50% - 28rem), transparent calc(50% - 21rem), transparent calc(50% + 21rem), #000 calc(50% + 28rem));
-      mask-image: linear-gradient(to right, #000 calc(50% - 28rem), transparent calc(50% - 21rem), transparent calc(50% + 21rem), #000 calc(50% + 28rem));
-      pointer-events: none;
-    }
-    header > * { position: relative; }
-    header .brand {
-      font-size: 0.9rem;
-      letter-spacing: 0.2em;
-      text-transform: uppercase;
-      color: #67e8f9;
-      margin-bottom: 1rem;
-    }
-    header h1 { font-size: clamp(2rem, 7vw, 3.2rem); line-height: 1.2; color: #ffffff; text-shadow: 0 2px 8px rgba(15, 23, 42, 0.35); }
-    header p.sub {
-      max-width: 36rem;
-      margin: 1rem auto 1.75rem;
-      color: #e2e8f0;
-      font-size: 1.1rem;
-    }
-    .btn {
-      display: inline-block;
-      background: var(--wa);
-      color: #fff;
-      text-decoration: none;
-      font-weight: 700;
-      font-size: 1.1rem;
-      padding: 1rem 2rem;
-      min-height: 3rem;
-      border-radius: 999px;
-      border: 2px solid #fff;
-      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.25);
-      transition: background 0.2s, transform 0.2s;
-    }
-    .btn:hover, .btn:focus-visible { background: var(--wa-hover); transform: translateY(-2px); }
-    .note { margin-top: 0.75rem; color: #e2e8f0; font-size: 0.95rem; }
-    main {
-      max-width: 52rem;
-      margin: -2.5rem auto 0;
-      position: relative;
-      z-index: 1;
-      padding: 0 1.25rem 3rem;
-    }
-    section {
-      background: var(--card);
-      border-radius: 1rem;
-      padding: 1.5rem 1.25rem;
-      margin-bottom: 1.25rem;
-      box-shadow: 0 10px 25px rgba(15, 23, 42, 0.08);
-    }
-    h2 { font-size: 1.4rem; color: var(--heading); margin-bottom: 0.75rem; }
-    section p { color: var(--text); }
-    ul, ol { padding-left: 1.25rem; }
-    li { margin-bottom: 0.75rem; }
-    li:last-child { margin-bottom: 0; }
-    li span { color: var(--muted); }
-    .service-cards { display: grid; grid-template-columns: 1fr; gap: 1rem; }
-    .service-card {
-      background: var(--inner);
-      border: 1px solid var(--border);
-      border-top: 4px solid var(--cyan);
-      border-radius: 0.75rem;
-      padding: 1.25rem;
-      display: block;
-      color: inherit;
-      text-decoration: none;
-      transition: transform 0.2s, box-shadow 0.2s;
-    }
-    .service-card:link, .service-card:visited, .service-card:active {
-      color: var(--text);
-      text-decoration: none;
-    }
-    .service-card:link strong, .service-card:visited strong, .service-card:hover strong, .service-card:active strong { color: var(--heading); }
-    .service-card:link span, .service-card:visited span, .service-card:hover span, .service-card:active span { color: var(--muted); }
-    .service-card:visited .icon { color: #fff; }
-    .service-card:visited .icon svg { stroke: #fff; }
-    .service-card:hover, .service-card:focus-visible {
-      transform: translateY(-4px);
-      box-shadow: 0 10px 25px rgba(15, 23, 42, 0.18);
-    }
-    .service-card .icon {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      width: 3rem;
-      height: 3rem;
-      margin-bottom: 0.75rem;
-      border-radius: 0.75rem;
-      background: linear-gradient(135deg, var(--navy), var(--indigo));
-      color: #fff;
-    }
-    .service-card .icon svg {
-      width: 1.6rem;
-      height: 1.6rem;
-      fill: none;
-      stroke: currentColor;
-      stroke-width: 2;
-      stroke-linecap: round;
-      stroke-linejoin: round;
-    }
-    .service-card strong { display: block; color: var(--heading); margin-bottom: 0.25rem; }
-    .service-card span { color: var(--muted); }
-    .split { display: grid; grid-template-columns: 1fr; gap: 1.25rem; margin-bottom: 1.25rem; }
-    .split section { margin-bottom: 0; }
-    .who-list { list-style: none; padding-left: 0; }
-    .who-list li { display: flex; align-items: flex-start; gap: 0.85rem; }
-    .who-list .icon {
-      flex: none;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      width: 2.5rem;
-      height: 2.5rem;
-      border-radius: 0.65rem;
-      background: linear-gradient(135deg, var(--navy), var(--indigo));
-      color: #fff;
-    }
-    .who-list .icon svg {
-      width: 1.35rem;
-      height: 1.35rem;
-      fill: none;
-      stroke: currentColor;
-      stroke-width: 2;
-      stroke-linecap: round;
-      stroke-linejoin: round;
-    }
-    .who-list strong { display: block; color: var(--heading); }
-    .steps { list-style: none; padding-left: 0; display: grid; grid-template-columns: 1fr; gap: 1rem; counter-reset: step; }
-    .steps > li {
-      counter-increment: step;
-      margin-bottom: 0;
-      background: var(--inner);
-      border: 1px solid var(--border);
-      border-top: 4px solid var(--cyan);
-      border-radius: 0.75rem;
-      padding: 1.25rem;
-    }
-    .steps > li::before {
-      content: counter(step);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      width: 3rem;
-      height: 3rem;
-      margin-bottom: 0.75rem;
-      border-radius: 50%;
-      background: linear-gradient(135deg, var(--navy), var(--indigo));
-      color: #fff;
-      font-size: 1.5rem;
-      font-weight: 800;
-    }
-    .steps strong { display: block; color: var(--heading); margin-bottom: 0.25rem; }
-    .steps { align-items: start; }
-    .steps > li { position: relative; transition: transform 0.2s, box-shadow 0.2s; }
-    .steps > li:hover, .steps > li:has(summary:focus-visible) {
-      transform: translateY(-4px);
-      box-shadow: 0 10px 25px rgba(15, 23, 42, 0.18);
-    }
-    .steps summary { list-style: none; cursor: pointer; padding-right: 1.5rem; }
-    .steps summary::-webkit-details-marker { display: none; }
-    .steps summary:focus-visible { outline: 2px solid var(--indigo); outline-offset: 4px; border-radius: 0.25rem; }
-    .steps summary::after {
-      content: "";
-      position: absolute;
-      top: 2.1rem;
-      right: 1.4rem;
-      width: 0.6rem;
-      height: 0.6rem;
-      border-right: 2px solid var(--muted);
-      border-bottom: 2px solid var(--muted);
-      transform: rotate(45deg);
-      transition: transform 0.2s;
-    }
-    .steps details[open] summary::after { transform: rotate(225deg); top: 2.3rem; }
-    .steps details ul { margin-top: 0.75rem; color: var(--muted); }
-    .steps details li { margin-bottom: 0.35rem; }
-    .steps details li:last-child { margin-bottom: 0; }
-    .cta { text-align: center; }
-    .cta .btn { margin: 0.5rem 0 1.5rem; border-color: var(--wa); }
-    .closing { color: var(--muted); max-width: 40rem; margin: 0 auto; }
-    @media (min-width: 40rem) {
-      header { padding: 5rem 1.5rem 6rem; }
-      main { padding: 0 1.5rem 4rem; }
-      section { padding: 2rem; margin-bottom: 1.75rem; }
-      .split { margin-bottom: 1.75rem; }
-      .service-cards { grid-template-columns: repeat(2, 1fr); }
-    }
-    @media (min-width: 60rem) {
-      .service-cards { grid-template-columns: repeat(3, 1fr); }
-      .split { grid-template-columns: repeat(2, 1fr); gap: 1.75rem; }
-      .split section { display: flex; flex-direction: column; }
-      .split ul { flex: 1; display: flex; flex-direction: column; justify-content: space-between; }
-      .split li { margin-bottom: 0; }
-      .steps { grid-template-columns: repeat(3, 1fr); }
-    }
-  </style>
+  <link rel="stylesheet" href="styles.css">
 </head>
 <body>
+  <nav class="site-nav" aria-label="Main menu">
+    <a href="index.html" aria-current="page">Home</a>
+    <a href="about.html">About</a>
+  </nav>
   <header>
     <div class="brand">Chunga Lab IT Support</div>
     <h1>Your trusted IT partner</h1>
     <p class="sub">We help businesses, schools and organisations keep their technology secure and running smoothly.</p>
+    <div class="actions">
     <a class="btn" href="https://wa.me/254724947213?text=Hi%20Chunga%20Lab%2C%20I%27d%20like%20a%20free%20consultation%20about%20" target="_blank" rel="noopener">Chat with us on WhatsApp</a>
+    <a class="btn btn-call" href="tel:+254724947213">Call us</a>
+    </div>
     <p class="note">Free consultation. No pressure.</p>
+    <p class="calls">Calls: Mon-Sat 8AM-6PM, 0724 947 213</p>
   </header>
 
   <main>
@@ -364,7 +129,11 @@
 
     <section class="cta">
       <h2>Ready to talk? Your first consultation is free.</h2>
+      <div class="actions">
       <a class="btn" href="https://wa.me/254724947213?text=Hi%20Chunga%20Lab%2C%20I%27d%20like%20a%20free%20consultation%20about%20" target="_blank" rel="noopener">Chat with us on WhatsApp</a>
+      <a class="btn btn-call" href="tel:+254724947213">Call us</a>
+      </div>
+      <p class="calls">Calls: Mon-Sat 8AM-6PM, 0724 947 213</p>
       <p class="closing">Technology problems shouldn't slow your business down. We help businesses stay connected, secure and productive with reliable IT solutions and support.</p>
     </section>
   </main>
