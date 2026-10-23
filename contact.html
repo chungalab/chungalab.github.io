@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Contact Chunga Lab IT Support: send us a message, chat on WhatsApp or call us.">
+  <title>Contact | Chunga Lab IT Support</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <nav class="site-nav" aria-label="Main menu">
+    <a href="index.html">Home</a>
+    <a href="about.html">About</a>
+    <a href="contact.html" aria-current="page">Contact</a>
+  </nav>
+  <header>
+    <div class="brand">Chunga Lab IT Support</div>
+    <h1>Contact us</h1>
+  </header>
+
+  <main>
+    <section>
+      <h2>Send us a message</h2>
+      <form class="contact-form" action="https://formspree.io/f/xbggrnbe" method="POST">
+        <div class="field">
+          <label for="name">Name</label>
+          <input type="text" id="name" name="name" autocomplete="name" placeholder="Your name" required>
+        </div>
+        <div class="field">
+          <label for="phone">Phone</label>
+          <input type="tel" id="phone" name="phone" autocomplete="tel" placeholder="+254 7XX XXX XXX" required>
+        </div>
+        <div class="field">
+          <label for="service">Service</label>
+          <select id="service" name="service" required>
+            <option value="" selected disabled>Choose a service</option>
+            <option>Reliable internet and network setup</option>
+            <option>Better Wi-Fi coverage</option>
+            <option>Business phone systems</option>
+            <option>Ongoing IT support</option>
+            <option>Staff cyber safety training</option>
+            <option>Other</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="message">Message</label>
+          <textarea id="message" name="message" rows="5" required></textarea>
+        </div>
+        <div class="hp-field" aria-hidden="true">
+          <label for="_gotcha">Leave this field empty</label>
+          <input type="text" id="_gotcha" name="_gotcha" tabindex="-1" autocomplete="off">
+        </div>
+        <button class="btn" type="submit">Send message</button>
+      </form>
+    </section>
+
+    <section class="cta">
+      <h2>Prefer WhatsApp?</h2>
+      <div class="actions">
+        <a class="btn" href="https://wa.me/254724947213?text=Hi%20Chunga%20Lab%2C%20I%27d%20like%20a%20free%20consultation%20about%20" target="_blank" rel="noopener">Chat with us on WhatsApp</a>
+        <a class="btn btn-call" href="tel:+254724947213">Call us</a>
+      </div>
+      <p class="calls">Calls: Mon-Sat 8AM-6PM, 0724 947 213</p>
+    </section>
+  </main>
+</body>
+</html>
