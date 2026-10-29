@@ -1,0 +1,23 @@
+[
+  {
+    "route": "14",
+    "action": "verify",
+    "note": "Main Kariobangi route from town (OTC → Kariobangi Terminal)",
+    "source": "Owner local knowledge",
+    "date": "2026-10-29"
+  },
+  {
+    "route": "28",
+    "action": "verify",
+    "note": "Gikomba → Kariobangi",
+    "source": "Owner local knowledge",
+    "date": "2026-10-29"
+  },
+  {
+    "route": "0027",
+    "action": "hide",
+    "note": "No longer running",
+    "source": "Owner local knowledge",
+    "date": "2026-10-29"
+  }
+]

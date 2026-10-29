@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Nairobi Matatu Stage Finder</title>
+  <meta name="description" content="Find the matatu route number and the CBD stage to board at.">
+  <meta name="theme-color" content="#0f172a">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icons/icon-192.png">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <link rel="stylesheet" href="vendor/leaflet/leaflet.css">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header>
+    <p class="brand">Nairobi</p>
+    <h1><a href="#/">Matatu Stage Finder</a></h1>
+  </header>
+  <main id="screen" aria-live="polite"></main>
+  <footer>
+    <p>Route data from Digital Matatu (2019). Confirm with the conductor.</p>
+    <p class="footer-links">
+      Built by <a href="https://chungalab.github.io" target="_blank" rel="noopener">Chunga Lab</a>
+      <span aria-hidden="true">·</span> Data reviewed: Oct 2026
+      <span aria-hidden="true">·</span> <a href="#/terms">Terms &amp; Privacy</a>
+    </p>
+  </footer>
+  <script src="vendor/leaflet/leaflet.js"></script>
+  <script type="module" src="app.js"></script>
+</body>
+</html>
