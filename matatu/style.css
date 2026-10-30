@@ -121,6 +121,8 @@ a { color: var(--link); }
   cursor: pointer;
 }
 .near-btn,
+.report-send,
+.report-here,
 .install-btn {
   min-height: 3rem;
   padding: 0 1.5rem;
@@ -133,6 +135,44 @@ a { color: var(--link); }
   cursor: pointer;
 }
 .near-btn:disabled { opacity: 0.6; cursor: wait; }
+
+/* Report a mistake */
+.card-wrap { margin: 0.5rem 0; }
+.card-wrap .card { margin: 0; }
+.group-line { display: block; margin: 0.5rem 0 0; font-size: 0.85rem; font-weight: 600; color: var(--muted); }
+.report-link { display: inline-flex; align-items: center; min-height: 3rem; font-size: 0.9rem; font-weight: 600; }
+.report-summary { margin: 0.5rem 0; overflow-wrap: anywhere; }
+.report-form h3 { font-size: 1.1rem; color: var(--heading); }
+.reasons { display: grid; gap: 0.5rem; }
+.reason-btn {
+  min-height: 3.5rem;
+  padding: 0.5rem 1rem;
+  font: inherit;
+  font-weight: 700;
+  color: var(--text);
+  background: var(--inner);
+  border: 2px solid var(--border);
+  border-radius: 0.75rem;
+  cursor: pointer;
+}
+.reason-btn[aria-pressed="true"] { color: #fff; background: linear-gradient(135deg, var(--navy), var(--indigo)); border-color: transparent; }
+.report-here { display: block; margin-top: 0.75rem; }
+.report-here:disabled,
+.report-send:disabled { opacity: 0.6; cursor: not-allowed; }
+.report-form label { display: block; margin-top: 0.75rem; font-weight: 600; }
+.report-form textarea {
+  display: block;
+  width: 100%;
+  margin-top: 0.25rem;
+  padding: 0.6rem;
+  font: inherit;
+  color: var(--text);
+  background: var(--inner);
+  border: 1px solid var(--border);
+  border-radius: 0.75rem;
+}
+.report-send { display: block; width: 100%; margin-top: 1rem; }
+.report-trap { position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden; }
 .install-btn { margin-top: 0.5rem; }
 .install-btn[hidden] { display: none; }
 .near { margin-top: 0.5rem; }
@@ -195,7 +235,7 @@ details.place .place-name { font-weight: 700; color: var(--heading); overflow-wr
   border: 1px solid var(--border);
   border-radius: 0.75rem;
 }
-.card .route-number { flex-shrink: 0; min-width: 3.5rem; padding: 0.1rem 0.5rem; font-size: 1.25rem; text-align: center; }
+.card .route-number { flex-shrink: 0; min-width: 3.5rem; max-width: 6.5rem; padding: 0.1rem 0.5rem; font-size: 1.25rem; text-align: center; overflow-wrap: anywhere; }
 .card-body { display: block; min-width: 0; overflow-wrap: anywhere; }
 .card-body > * { display: block; }
 .card-body .muted { font-size: 0.9rem; }
@@ -270,6 +310,9 @@ details.place .place-name { font-weight: 700; color: var(--heading); overflow-wr
   border-radius: 0.75rem;
   font-size: 2rem;
   font-weight: 800;
+  max-width: 100%;
+  line-height: 1.2;
+  white-space: normal; /* long labels such as "14 (via Thika Rd)" wrap instead of overflowing */
 }
 
 @media (min-width: 40rem) {

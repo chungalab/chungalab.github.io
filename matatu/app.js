@@ -1,9 +1,10 @@
 // Entry point: loads the data and runs the hash router
-// (#/ home, #/results?q=, #/route/<number>?to=<place>).
+// (#/ home, #/results?q=, #/route/<number>?to=<place>, #/report?route=&stage=&to=, #/terms).
 import { showStages as rawShowStages, routeChips, focusStage, showUser } from "./map.js";
 import { getPosition, nearestStages, isFar, friendlyMessage, isNearMe } from "./geo.js";
 import { displayRoute, initRouteNames } from "./routenames.js";
-import { parseCorrections, isHidden, visibleData, verifiedLabel, verifiedFirst } from "./corrections.js";
+import { parseCorrections, isHidden, visibleData, verifiedLabel, verifiedFirst, groupMates } from "./corrections.js";
+import { REASONS, reportHref, buildReport, sendReport } from "./report.js";
 import {
   buildIndex,
   search as rawSearch,
@@ -81,11 +82,18 @@ let corrections = parseCorrections(null); // replaced by start(); empty means no
 
 // Results order: verified routes first. (search.js already ordered them by stops; that order is kept within each group.)
 const plansFor = (place) => verifiedFirst(plansForPlace(index, place), corrections);
+// A plan-shaped record for a route that does not stop at the place being shown (an "other loop"): no stop count.
+function offPlacePlan(name) {
+  const ri = index.routes.findIndex((r) => r.short_name === name);
+  if (ri < 0) return null;
+  return { route: name, longName: index.routes[ri].long_name, board: index.info[ri].board, stopsToGo: null };
+}
 // The "✓ Verified Oct 2026" badge as a list of nodes: empty for routes that are not verified.
 const badge = (route) => {
   const text = verifiedLabel(corrections, route);
   return text ? [el("small", "verified", text)] : [];
 };
+let longNames = new Map(); // original route value -> full long_name, for the report screen
 let map = null;
 let wantNearest = false; // set when "near me" is typed: Home runs "Nearest stage" as soon as it is drawn
 
@@ -309,18 +317,30 @@ function renderHome() {
   }
 }
 
+// The small "Report a mistake" link. On a card it sits beside the card's own link, never inside it.
+const reportLink = (plan, place) =>
+  link(reportHref({ route: plan.route, stage: plan.board ? label(plan.board) : "", to: place.name }), "Report a mistake", "report-link");
+
 function routeCard(plan, place) {
   const a = link(planHref(plan.route, place.key), "", "card");
   const body = el("span", "card-body");
   body.append(
     el("strong", "", plan.board ? "Board at: " + label(plan.board) : "No CBD stage in our data"),
     el("span", "muted", plan.longName),
-    el("span", "muted", stopsText(plan.stopsToGo) + (plan.stopsToGo ? " to " + place.name : "")),
+    el(
+      "span",
+      "muted",
+      plan.stopsToGo === null
+        ? "Does not stop at " + place.name
+        : stopsText(plan.stopsToGo) + (plan.stopsToGo ? " to " + place.name : ""),
+    ),
     ...badge(plan.route),
     el("small", "data-note", DATA_NOTE),
   );
   a.append(el("span", "route-number", displayRoute(plan.route)), body);
-  return a;
+  const wrap = el("div", "card-wrap");
+  wrap.append(a, reportLink(plan, place));
+  return wrap;
 }
 
 function placeGroup(place, open) {
@@ -333,7 +353,20 @@ function placeGroup(place, open) {
 
   const boarded = plans.filter((p) => p.board);
   const others = plans.filter((p) => !p.board);
-  for (const plan of boarded) details.append(routeCard(plan, place));
+  // Routes in a corrections "group" (the two loops of route 14) are shown together: when a place shows one of
+  // them, the group mates that do not stop here appear right below it, even though they miss this exact place.
+  const shown = new Set(plans.map((p) => p.route));
+  for (const plan of boarded) {
+    details.append(routeCard(plan, place));
+    const missing = groupMates(corrections, plan.route).filter((r) => !shown.has(r));
+    const extra = missing.map(offPlacePlan).filter(Boolean);
+    if (!extra.length) continue;
+    details.append(el("small", "group-line", "Other loop to Kariobangi"));
+    for (const mate of extra) {
+      shown.add(mate.route);
+      details.append(routeCard(mate, place));
+    }
+  }
   if (others.length) {
     details.append(el("h3", "group-title", "Doesn’t pass a CBD stage"));
     for (const plan of others) details.append(routeCard(plan, place));
@@ -372,7 +405,7 @@ function renderPlan(plan, place) {
   if (plan.approx) {
     head.append(el("p", "muted", "This place is only listed on the trip into town, so the stop count is approximate."));
   }
-  head.append(...badge(plan.route), el("small", "data-note", DATA_NOTE));
+  head.append(...badge(plan.route), el("small", "data-note", DATA_NOTE), reportLink(plan, place));
   const sections = [head];
 
   const mapBox = el("div", "map");
@@ -423,7 +456,14 @@ function renderRouteOnly(route) {
 
   const list = el("ul", "stage-list");
   for (const s of served) list.append(el("li", "", label(s)));
-  head.append(el("p", "muted", "Board at:"), list, ...badge(route), el("small", "data-note", DATA_NOTE));
+  const first = served[0];
+  head.append(
+    el("p", "muted", "Board at:"),
+    list,
+    ...badge(route),
+    el("small", "data-note", DATA_NOTE),
+    link(reportHref({ route, stage: served.length === 1 ? label(first) : "" }), "Report a mistake", "report-link"),
+  );
 
   const mapBox = el("div", "map");
   screen.replaceChildren(head, section(el("h2", "", "Where to board"), mapBox));
@@ -441,6 +481,117 @@ function renderRoute(name, placeKey) {
   const plan = place && plansForPlace(index, place).find((p) => p.route === name);
   if (plan) renderPlan(plan, place);
   else renderRouteOnly(name);
+}
+
+// "Report a mistake": the route, stage and destination come from the address and are shown as text. The person
+// taps what is wrong, then Send. Location is read only if they tap 📍. Their choices stay on screen if sending fails.
+function renderReport(params) {
+  const route = params.get("route") || "";
+  const stage = params.get("stage") || "";
+  const to = params.get("to") || "";
+  const display = route ? displayRoute(route) : "";
+  const name = longNames.get(route) || "";
+  let reason = "";
+  let pos = null;
+
+  const summary = el("p", "report-summary");
+  const facts = [
+    route && ["Route", display + (name ? " – " + name : "")],
+    stage && ["Board at", stage],
+    to && ["Going to", to],
+  ].filter(Boolean);
+  facts.forEach(([k, v], i) => {
+    if (i) summary.append(el("br"));
+    summary.append(el("strong", "", k + ": "), v);
+  });
+
+  const status = statusLine("");
+  const send = el("button", "report-send", "Send report");
+  send.type = "submit";
+  send.disabled = true;
+
+  const reasonBox = el("div", "reasons");
+  reasonBox.setAttribute("role", "group");
+  reasonBox.setAttribute("aria-label", "What’s wrong?");
+  const reasonButtons = REASONS.map((text) => {
+    const b = el("button", "reason-btn", text);
+    b.type = "button";
+    b.setAttribute("aria-pressed", "false");
+    b.addEventListener("click", () => {
+      reason = text;
+      for (const other of reasonButtons) other.setAttribute("aria-pressed", String(other === b));
+      send.disabled = false;
+    });
+    return b;
+  });
+  reasonBox.append(...reasonButtons);
+
+  const here = el("button", "report-here", "📍 I’m standing at the new stage");
+  here.type = "button";
+  here.addEventListener("click", async () => {
+    here.disabled = true;
+    status.textContent = "Finding your location…";
+    try {
+      pos = await getPosition();
+      here.textContent = "📍 Location added";
+      status.textContent = "Thanks. Your location will be sent with this report.";
+    } catch (err) {
+      here.disabled = false;
+      status.textContent = friendlyMessage(err && err.kind) + " You can still send the report without it.";
+    }
+  });
+
+  const details = el("textarea");
+  details.id = "report-details";
+  details.name = "details";
+  details.rows = 3;
+  details.maxLength = 500;
+  const detailsLabel = el("label", "", "Details (optional)");
+  detailsLabel.htmlFor = details.id;
+
+  // Honeypot: hidden from people; bots fill it in. Formspree drops reports where it is not empty.
+  const trap = el("input");
+  trap.type = "text";
+  trap.name = "_gotcha";
+  trap.tabIndex = -1;
+  trap.autocomplete = "off";
+  trap.setAttribute("aria-hidden", "true");
+  const trapBox = el("div", "report-trap");
+  trapBox.append(trap);
+
+  const form = el("form", "report-form");
+  form.append(
+    el("h3", "", "What’s wrong?"),
+    reasonBox,
+    here,
+    detailsLabel,
+    details,
+    trapBox,
+    send,
+    status,
+    el("p", "muted", "No name, phone or email needed. A person checks every report."),
+  );
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    if (!reason) return;
+    send.disabled = true;
+    status.textContent = "Sending…";
+    const result = await sendReport(
+      buildReport({ route, display, name, stage, to, reason, details: details.value, pos, gotcha: trap.value }),
+    );
+    if (result.ok) {
+      form.replaceChildren(el("p", "lead", "Asante sana! Your report helps every commuter on this route."), link("#/", "← Back to home", "back"));
+      return;
+    }
+    send.disabled = false; // choices stay as they are
+    status.textContent = result.offline
+      ? "You seem to be offline. Your choices are kept. Please try again when you have a connection."
+      : "Sorry, that did not go through. Your choices are kept. Please tap Send report again.";
+  });
+
+  screen.replaceChildren(
+    section(link("#/", "← Back to home", "back"), el("h2", "", "Report a mistake"), summary, form),
+  );
 }
 
 // Terms and privacy: plain text, no data needed. Add or change points here; keep the language simple.
@@ -479,11 +630,13 @@ function renderTerms() {
       "The app does not show fares or timetables.",
       "Please travel safely.",
       "Corrections are checked by a person before anything is changed.",
+      "If you tap “Report a mistake”, your report is sent through Formspree to our email. Every report is checked by a person before any change is made.",
     ),
     heading("Privacy"),
     list(
       "No account, no tracking and no ads.",
-      "Your location is used only when you tap a button, such as “Nearest stage”. It stays on your phone and we never receive it.",
+      "Your location is used only when you tap a button, such as “Nearest stage”. For “Nearest stage” it stays on your phone and we never receive it.",
+      "A report includes your location only if you tap the 📍 button on the report screen. Reports have no name, phone or email.",
       "“Directions to stage” opens Google Maps. Google Maps then sees the stage location.",
       "Map pictures (tiles) come from OpenStreetMap.",
     ),
@@ -536,6 +689,10 @@ function route() {
     } else if (parts[0] === "terms") {
       perfScreen = "terms";
       renderTerms();
+      screen.prepend(searchSection("", false));
+    } else if (parts[0] === "report") {
+      perfScreen = "report";
+      renderReport(params);
       screen.prepend(searchSection("", false));
     } else if (parts[0] === "route" && parts[1]) {
       perfScreen = "route " + parts[1];
@@ -657,7 +814,8 @@ async function start() {
     const routes = visible.routes;
     stages = visible.stages;
     for (const s of stages) s.label = stageLabel(s, labels); // in memory only; data files stay untouched
-    initRouteNames(routes.map((r) => r.short_name)); // display names only
+    initRouteNames(routes.map((r) => r.short_name), corrections.labels); // display names only
+    longNames = new Map(routes.map((r) => [r.short_name, r.long_name]));
     const perfIndex = performance.now();
     index = buildIndex(routes, stages, aliases);
     perfLog("buildIndex: " + index.places.size + " places, " + index.vocab.size + " words in " + since(perfIndex));

@@ -14,5 +14,6 @@
   "langata": ["langata"],
   "kasa": ["kasarani"],
   "pipu": ["pipeline"],
-  "kariobangi mwisho": ["kariobangi terminal"]
+  "kariobangi mwisho": ["kariobangi mwisho", "kariobangi terminal"],
+  "kariobangi north": ["kariobangi mwisho", "kariobangi terminal"]
 }

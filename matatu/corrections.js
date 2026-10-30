@@ -1,4 +1,6 @@
-// Corrections layer: corrections.json can mark a route "verify" (badge, sorts first) or "hide" (gone everywhere).
+// Corrections layer: corrections.json can mark a route "verify" (badge, sorts first), "hide" (gone everywhere) or
+// "relabel" (shown under a different name, e.g. "14 (via Thika Rd)"; add "verified": true to give it the badge too).
+// Any entry may also have a "group": routes sharing a group id are shown together in results (see groupMates).
 // Route values are the original data names ("0027", not "27"). The data files themselves are never changed:
 // hidden routes are filtered out in memory after loading. Pure functions, no DOM.
 
@@ -9,15 +11,34 @@ const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "
 export function parseCorrections(raw) {
   const hidden = new Set();
   const verified = new Map();
+  const labels = new Map(); // route -> display label, from "relabel" entries
+  const groups = new Map(); // route -> group id, from any entry with a "group" (routes that belong together)
   if (Array.isArray(raw)) {
     for (const entry of raw) {
       if (!entry || typeof entry.route !== "string" || !entry.route) continue;
+      if (typeof entry.group === "string" && entry.group.trim()) groups.set(entry.route, entry.group.trim());
       if (entry.action === "hide") hidden.add(entry.route);
       else if (entry.action === "verify") verified.set(entry.route, entry);
+      else if (entry.action === "relabel") {
+        if (typeof entry.display === "string" && entry.display.trim()) labels.set(entry.route, entry.display.trim());
+        if (entry.verified === true) verified.set(entry.route, entry);
+      }
     }
   }
-  for (const route of hidden) verified.delete(route);
-  return { hidden, verified };
+  for (const route of hidden) {
+    verified.delete(route);
+    labels.delete(route);
+    groups.delete(route);
+  }
+  return { hidden, verified, labels, groups };
+}
+
+// The other routes in the same group as `route` (e.g. the other loop of route 14), in corrections.json order.
+// Empty when the route has no group. Hidden routes are never members.
+export function groupMates(corr, route) {
+  const id = corr.groups.get(route);
+  if (!id) return [];
+  return [...corr.groups].filter(([r, g]) => g === id && r !== route).map(([r]) => r);
 }
 
 export const isHidden = (corr, route) => corr.hidden.has(route);
