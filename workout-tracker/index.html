@@ -1,0 +1,3190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>My Workout Tracker</title>
+<meta name="theme-color" content="#d4622a">
+<meta name="description" content="Personal workout tracker: sets, reps, progress and stretches.">
+<meta name="robots" content="noindex">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<style>[hidden]:not([hidden=until-found i]){display:none!important} img{max-width:100%}</style>
+<style>
+  :root {
+    --bg: #f7f7f5;
+    --card: #ffffff;
+    --text: #1a1a1a;
+    --muted: #6b6b6b;
+    --border: #e5e5e2;
+    --accent: #d4622a;
+    --accent-soft: #fdeee5;
+    box-sizing: border-box;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #161513; --card: #201f1c; --text: #f0efec;
+      --muted: #9a988f; --border: #34322c; --accent: #e8834a; --accent-soft: #3a2416;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #161513; --card: #201f1c; --text: #f0efec;
+    --muted: #9a988f; --border: #34322c; --accent: #e8834a; --accent-soft: #3a2416;
+  }
+  html { scroll-padding-top: env(safe-area-inset-top, 0px); }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; min-height: 100%; }
+  .wrap { max-width: 640px; margin: 0 auto; padding: 20px 16px 60px; }
+  header { margin-bottom: 16px; }
+  h1 { font-size: 1.4rem; margin: 0 0 4px; }
+  .sub { color: var(--muted); font-size: 0.88rem; }
+
+  .day-tabs {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    padding-bottom: 6px;
+    margin-bottom: 16px;
+    -webkit-overflow-scrolling: touch;
+  }
+  .day-tab {
+    flex: none;
+    padding: 8px 14px;
+    border-radius: 20px;
+    border: 1px solid var(--border);
+    background: var(--card);
+    color: var(--text);
+    font-size: 0.88rem;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .day-tab.active {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+    font-weight: 600;
+  }
+  .day-tab.add {
+    color: var(--accent);
+    border-style: dashed;
+  }
+
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 16px; margin-bottom: 14px; }
+  .ex-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+  .ex-name { font-weight: 600; font-size: 1.05rem; outline: none; }
+  .ex-target { color: var(--muted); font-size: 0.82rem; outline: none; margin-top: 2px; }
+  .set-row { display: grid; grid-template-columns: 28px 1fr 1fr 32px; gap: 8px; align-items: center; margin-bottom: 8px; }
+  .set-num { color: var(--muted); font-size: 0.85rem; text-align: center; }
+  input { width: 100%; padding: 9px 10px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg); color: var(--text); font-size: 0.95rem; }
+  input::placeholder { color: var(--muted); opacity: 0.7; }
+  .del-btn { background: none; border: none; color: var(--muted); font-size: 1.1rem; cursor: pointer; padding: 4px; }
+  .add-set { background: none; border: 1px dashed var(--border); color: var(--accent); border-radius: 8px; padding: 7px; width: 100%; font-size: 0.85rem; cursor: pointer; margin-top: 2px; }
+  .top-actions { display: flex; gap: 8px; margin-bottom: 16px; }
+  button.primary { background: var(--accent); color: #fff; border: none; border-radius: 10px; padding: 11px 16px; font-size: 0.95rem; font-weight: 600; cursor: pointer; flex: 1; }
+  button.secondary { background: var(--accent-soft); color: var(--accent); border: none; border-radius: 10px; padding: 12px; min-height: 44px; font-size: 0.85rem; cursor: pointer; white-space: nowrap; }
+  .history { font-size: 0.85rem; color: var(--muted); margin-top: 6px; padding-top: 8px; border-top: 1px solid var(--border); }
+  .history strong { color: var(--text); }
+  .toast { position: fixed; bottom: calc(20px + env(safe-area-inset-bottom, 0px)); left: 50%; transform: translateX(-50%); background: var(--accent); color: #fff; padding: 10px 18px; border-radius: 20px; font-size: 0.88rem; opacity: 0; pointer-events: none; transition: opacity 0.25s; }
+  .toast.show { opacity: 1; }
+  .empty-note { color: var(--muted); font-size: 0.85rem; }
+  .day-name-row { display:flex; align-items:center; justify-content:space-between; margin-bottom: 14px; }
+  .day-title { font-size: 1.1rem; font-weight: 600; outline: none; }
+  .del-day { color: var(--muted); background:none; border:none; font-size:0.8rem; cursor:pointer; text-decoration: underline; }
+
+  /* v2 additions: set rows with RIR + done tick, rest bar, banners, volume bars */
+  :root { --good: #2e8b57; --warn: #b7791f; --bad: #c0392b; --good-soft: #e6f4ec; }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --good: #5cc28a; --warn: #e0a84a; --bad: #e46a5c; --good-soft: #17301f; color-scheme: dark; } }
+  :root[data-theme="dark"] { --good: #5cc28a; --warn: #e0a84a; --bad: #e46a5c; --good-soft: #17301f; color-scheme: dark; }
+  .set-row.v2 { grid-template-columns: 20px minmax(0,1fr) minmax(0,1fr) 46px 36px 24px; gap: 6px; }
+  .set-row.v2.single { grid-template-columns: 20px minmax(0,1fr) 46px 36px 24px; }
+  .set-row.done input { background: var(--good-soft); border-color: var(--good); }
+  .rir-input { padding: 9px 4px; text-align: center; font-size: 0.85rem; }
+  .done-btn { width: 36px; height: 38px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg); color: var(--muted); font-size: 1rem; cursor: pointer; padding: 0; }
+  .done-btn.on { background: var(--good); border-color: var(--good); color: #fff; }
+  .col-heads { display: grid; grid-template-columns: 20px minmax(0,1fr) minmax(0,1fr) 46px 36px 24px; gap: 6px; font-size: 0.66rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 4px; }
+  .col-heads.single { grid-template-columns: 20px minmax(0,1fr) 46px 36px 24px; }
+  .chip-row { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+  .chip { font-size: 0.72rem; color: var(--accent); background: var(--accent-soft); border: none; border-radius: 12px; padding: 4px 9px; cursor: pointer; }
+  .ex-note { font-size: 0.78rem; color: var(--muted); font-style: italic; margin-top: 4px; }
+  .banner { border-radius: 12px; padding: 12px; margin-bottom: 12px; font-size: 0.84rem; display: flex; gap: 10px; align-items: center; justify-content: space-between; }
+  .banner.info { background: var(--accent-soft); border: 1px solid var(--accent); }
+  .banner.calm { background: var(--card); border: 1px solid var(--border); }
+  .banner button { flex: none; }
+  .rest-bar { position: fixed; left: 0; right: 0; bottom: 0; background: var(--text); color: var(--bg); padding: 10px 16px calc(10px + env(safe-area-inset-bottom, 0px)); display: flex; align-items: center; gap: 10px; z-index: 900; font-variant-numeric: tabular-nums; }
+  .rest-bar[hidden] { display: none !important; }
+  .rest-bar .t { font-size: 1.4rem; font-weight: 700; min-width: 64px; }
+  .rest-bar .lbl { flex: 1; font-size: 0.8rem; opacity: 0.8; min-width: 0; }
+  .rest-bar button { background: transparent; color: var(--bg); border: 1px solid currentColor; border-radius: 8px; padding: 6px 10px; font-size: 0.8rem; cursor: pointer; }
+  .vol-row { display: grid; grid-template-columns: 92px minmax(0,1fr) 40px; gap: 8px; align-items: center; font-size: 0.8rem; margin-bottom: 8px; }
+  .vol-track { position: relative; height: 10px; background: var(--bg); border-radius: 5px; overflow: hidden; }
+  .vol-band { position: absolute; top: 0; bottom: 0; background: var(--good-soft); }
+  .vol-fill { position: absolute; top: 2px; bottom: 2px; left: 0; border-radius: 3px; }
+  .num { font-variant-numeric: tabular-nums; }
+  .seg { display: flex; gap: 6px; flex-wrap: wrap; margin: 4px 0 12px; }
+  .seg button { flex: 1; min-width: 70px; padding: 8px 6px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg); color: var(--text); font-size: 0.8rem; cursor: pointer; }
+  .seg button.on { background: var(--accent); border-color: var(--accent); color: #fff; }
+  textarea { width: 100%; min-height: 120px; padding: 9px 10px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg); color: var(--text); font: 0.78rem ui-monospace, Menlo, monospace; }
+  body.resting .wrap { padding-bottom: 110px; }
+  body.resting .toast { bottom: calc(76px + env(safe-area-inset-bottom, 0px)); }
+  .spark { display:grid; grid-template-columns: minmax(0,1fr) 120px 56px; gap: 8px; align-items:center; font-size:0.8rem; margin-bottom:6px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>🏋️ My Workout Tracker</h1>
+    <div class="sub">Switch workouts, log sets, track progress over time</div>
+  </header>
+
+  <div class="day-tabs" id="dayTabs"></div>
+
+  <div class="day-name-row">
+    <div class="day-title" id="dayTitle" contenteditable="true"></div>
+    <button class="del-day" id="deleteDayBtn">delete this workout</button>
+  </div>
+
+  <div id="mesoBanner"></div>
+  <div id="rolloverBanner"></div>
+  <div id="rampBanner"></div>
+
+  <div class="top-actions">
+    <button class="primary" id="saveBtn">Save today's session</button>
+    <button class="secondary" id="historyBtn">History</button>
+    <button class="secondary" id="shareBtn">Share</button>
+  </div>
+
+  <div id="debugStatus" style="font-size:0.72rem; color:var(--muted); margin:-8px 0 12px; min-height:14px;"></div>
+
+  <div id="exercises"></div>
+
+  <div style="display:flex; gap:8px; margin-top:4px;">
+    <button class="secondary" id="addExerciseBtn" style="flex:1;">+ Add exercise</button>
+    <button class="secondary" id="restoreToggleBtn" style="flex:1;">♻️ Restore removed exercises</button>
+  </div>
+  <div id="restorePanel" style="display:none; margin-top:10px;"></div>
+
+  <button class="secondary" id="nutritionBtn" style="width:100%; margin-top:10px;">🥗 Nutrition & Stretches</button>
+
+  <button class="secondary" id="timerToggleBtn" style="width:100%; margin-top:10px;">⏱️ Session Timer (10 / 60 / 10 = 80 min)</button>
+
+  <button class="secondary" id="playlistToggleBtn" style="width:100%; margin-top:10px;">🎧 Workout Playlist</button>
+  <div id="playlistPanel" style="display:none;"></div>
+
+  <button class="secondary" id="bwToggleBtn" style="width:100%; margin-top:10px;">⚖️ Bodyweight Log</button>
+
+  <button class="secondary" id="volumeToggleBtn" style="width:100%; margin-top:10px;">📊 Weekly sets per muscle</button>
+
+  <div style="display:flex; gap:8px; margin-top:10px;">
+    <button class="secondary" id="freshStartBtn" style="flex:1;">🧹 Clear sets for a new session</button>
+    <button class="secondary" id="backupToggleBtn" style="flex:1;">💾 Backup / restore</button>
+  </div>
+
+  <div id="volumePanel" style="display:none;"></div>
+  <div id="backupPanel" style="display:none;"></div>
+  <div id="historyPanel" style="display:none;"></div>
+  <div id="nutritionPanel" style="display:none;"></div>
+  <div id="timerPanel" style="display:none;"></div>
+  <div id="bodyweightPanel" style="display:none;"></div>
+</div>
+
+<div class="toast" id="toast">Saved ✓</div>
+
+<div class="rest-bar" id="restBar" hidden>
+  <div class="t" id="restTime">0:00</div>
+  <div class="lbl" id="restLabel">Rest</div>
+  <button id="restMinus">−15s</button>
+  <button id="restPlus">+15s</button>
+  <button id="restSkip">Skip</button>
+</div>
+
+<script>
+// Local calendar date (YYYY-MM-DD). The old code used UTC, which in Nairobi
+// rolled the date late at night; local keeps "today" matching the gym clock.
+function todayStr(d) {
+  const x = d ? new Date(d) : new Date();
+  return x.getFullYear() + '-' + String(x.getMonth() + 1).padStart(2, '0') + '-' + String(x.getDate()).padStart(2, '0');
+}
+function addDays(dateStr, n) {
+  const [y, m, d] = dateStr.split('-').map(Number);
+  return todayStr(new Date(y, m - 1, d + n));
+}
+function daysBetween(a, b) {
+  const [y1, m1, d1] = a.split('-').map(Number), [y2, m2, d2] = b.split('-').map(Number);
+  return Math.round((new Date(y2, m2 - 1, d2) - new Date(y1, m1 - 1, d1)) / 86400000);
+}
+// Per-day stretch libraries: dynamic moves before training, static holds after.
+// Each entry is {name, detail, cue} — cue is a short form/safety note.
+// This is SEED data only; the live, editable copy lives in localStorage (see stretchData below),
+// so the user can rename/edit/delete/add stretches per day and it persists.
+const DEFAULT_STRETCHES = {
+  "Day 1 - Legs": {
+    pre: [
+      { name: "Bodyweight squats", detail: "10 slow reps, full range", cue: "Keep chest up, knees tracking over toes" },
+      { name: "Walking lunges", detail: "6 each leg", cue: "Front knee stays behind toes, controlled step" },
+      { name: "Leg swings", detail: "10 each leg, front-back and side-side", cue: "Hold something for balance, don't force the range" },
+      { name: "Hip circles", detail: "10 each direction", cue: "Keep core braced, move from the hip" },
+      { name: "Glute bridges", detail: "12 reps", cue: "Squeeze glutes at the top, avoid arching the lower back" },
+      { name: "Ankle bounces / light skips", detail: "20 sec", cue: "Stay light on the balls of your feet" },
+    ],
+    post: [
+      { name: "Standing quad stretch", detail: "30 sec each leg", cue: "Keep knees together, don't yank the foot" },
+      { name: "Seated hamstring stretch", detail: "30 sec each leg", cue: "Hinge from the hips, keep back long, don't round it" },
+      { name: "Calf stretch against wall", detail: "30 sec each leg", cue: "Keep heel flat, back leg straight" },
+      { name: "Figure-4 glute stretch", detail: "30 sec each side", cue: "Keep back flat, ease in rather than pull hard" },
+      { name: "Kneeling hip flexor stretch", detail: "30 sec each side", cue: "Tuck pelvis slightly — feel it in the hip, not the back" },
+    ],
+  },
+  "Day 2 - Push": {
+    pre: [
+      { name: "Arm circles", detail: "10 forward, 10 backward", cue: "Small circles first, then bigger — controlled, not flailing" },
+      { name: "Shoulder rolls", detail: "10 each direction", cue: "Full range, relax the neck" },
+      { name: "Push-up to downward dog", detail: "8 slow reps", cue: "Keep core tight through the push-up" },
+      { name: "Band pull-aparts (or arm pulses)", detail: "15 reps", cue: "Squeeze shoulder blades together, don't shrug" },
+      { name: "Torso twists", detail: "10 each side", cue: "Rotate from the core, hips stay facing forward" },
+    ],
+    post: [
+      { name: "Doorway chest stretch", detail: "30 sec each side", cue: "Lean in gently, stop at mild tension not pain" },
+      { name: "Overhead triceps stretch", detail: "30 sec each arm", cue: "Keep elbow close to the head, don't force it down" },
+      { name: "Cross-body shoulder stretch", detail: "30 sec each arm", cue: "Use the opposite arm to gently pull, shoulders stay down" },
+      { name: "Child's pose, reaching forward", detail: "Hold 30-45 sec", cue: "Sit hips back toward heels, relax the shoulders" },
+    ],
+  },
+  "Day 3 - Pull": {
+    pre: [
+      { name: "Arm swings", detail: "10 each direction", cue: "Loosen the shoulders, controlled not violent" },
+      { name: "Cat-cow", detail: "8 slow reps", cue: "Move with your breath, full spine articulation" },
+      { name: "Scapular pulls / light band rows", detail: "12 reps", cue: "Pull shoulder blades together, avoid using momentum" },
+      { name: "Torso rotations", detail: "10 each side", cue: "Keep hips stable, rotate through the upper back" },
+    ],
+    post: [
+      { name: "Overhead lat stretch (lean to side)", detail: "30 sec each side", cue: "Reach up and over, feel it along the side body" },
+      { name: "Doorframe bicep stretch", detail: "30 sec each arm", cue: "Straighten the arm gently, palm facing back" },
+      { name: "Seated forward fold (lower back)", detail: "Hold 30-45 sec", cue: "Hinge from the hips, let the back round slightly — don't force it" },
+      { name: "Cross-body shoulder stretch", detail: "30 sec each arm", cue: "Use the opposite arm to gently pull, shoulders stay down" },
+    ],
+  },
+  "Day 4 - Upper/Core": {
+    pre: [
+      { name: "Arm circles", detail: "10 forward, 10 backward", cue: "Small then bigger, controlled" },
+      { name: "Plank shoulder taps", detail: "10 each side", cue: "Keep hips still, brace core to avoid rocking" },
+      { name: "Cat-cow", detail: "8 slow reps", cue: "Move with your breath" },
+      { name: "Torso twists", detail: "10 each side", cue: "Rotate from the core, hips face forward" },
+      { name: "Hip circles", detail: "10 each direction", cue: "Keep core braced" },
+    ],
+    post: [
+      { name: "Cobra stretch", detail: "Hold 30 sec", cue: "Keep elbows slightly bent, lift from the chest not the lower back" },
+      { name: "Child's pose", detail: "Hold 30-45 sec", cue: "Sit hips back toward heels, relax shoulders" },
+      { name: "Standing side bend", detail: "20 sec each side", cue: "Reach up and over, keep hips square" },
+      { name: "Seated spinal twist", detail: "20 sec each side", cue: "Twist from the ribcage, sit bones stay grounded" },
+    ],
+  },
+};
+const DEFAULT_STRETCHES_FALLBACK = {
+  pre: [
+    { name: "Light cardio", detail: "3-5 min easy walk, bike, or jump rope", cue: "Just enough to raise heart rate, not tire you out" },
+    { name: "Arm circles", detail: "10 forward, 10 backward", cue: "Controlled, not flailing" },
+    { name: "Leg swings", detail: "10 each leg", cue: "Hold something for balance" },
+    { name: "Bodyweight squats", detail: "10 slow reps", cue: "Chest up, knees tracking over toes" },
+    { name: "Torso twists", detail: "10 each side", cue: "Rotate from the core" },
+  ],
+  post: [
+    { name: "Standing forward fold", detail: "Hold 30 sec", cue: "Let the knees soften, don't force it straight" },
+    { name: "Hamstring stretch", detail: "30 sec each leg", cue: "Hinge from hips, keep back long" },
+    { name: "Chest & shoulder stretch", detail: "30 sec each side", cue: "Ease in gently, stop at mild tension" },
+    { name: "Child's pose", detail: "Hold 30-45 sec", cue: "Relax the shoulders" },
+    { name: "Deep breathing", detail: "5 slow breaths", cue: "Long exhale to bring heart rate down" },
+  ],
+};
+
+// Same-muscle-group alternates for the default exercises, used to rotate
+// movements every ~6 weeks without changing what's being trained.
+const DEFAULT_ALTERNATES = {
+  "Romanian Deadlift": ["Good Mornings", "Single-Leg RDL"],
+  "Hack Squat / Leg Press": ["Front Squat", "Goblet Squat"],
+  "Walking Lunges": ["Bulgarian Split Squat", "Step-ups"],
+  "Standing Calf Raise": ["Seated Calf Raise", "Calf Press on Leg Press"],
+  "Overhead Press": ["Dumbbell Shoulder Press", "Arnold Press"],
+  "Incline Dumbbell Press": ["Incline Barbell Press", "Machine Chest Press"],
+  "Lateral Raise": ["Cable Lateral Raise", "Upright Row"],
+  "Triceps Pushdown": ["Overhead Triceps Extension", "Skull Crushers"],
+  "Pull-ups / Lat Pulldown": ["Chin-ups", "Straight-Arm Pulldown"],
+  "Barbell Row": ["Chest-Supported Row", "Cable Row"],
+  "Face Pull": ["Rear Delt Fly", "Band Pull-Apart"],
+  "Biceps Curl": ["Hammer Curl", "Preacher Curl"],
+  "Dumbbell Shoulder Press": ["Machine Shoulder Press", "Landmine Press"],
+  "Chest-Supported Row": ["Seated Cable Row", "T-Bar Row"],
+  "Hanging Leg Raise": ["Cable Crunch", "Ab Wheel Rollout"],
+  "Plank": ["Side Plank", "Dead Bug"],
+};
+const ROTATION_WEEKS = 6;
+
+// Adds variant-rotation fields to any exercise that doesn't have them yet —
+// covers both the seed data and anyone's already-saved exercises. The first
+// exercise in each day is treated as the anchor lift (kept fixed for
+// long-term progress tracking); everything else is rotation-eligible.
+function migrateExerciseVariants() {
+  let changed = false;
+  const today = todayStr();
+  Object.keys(data.days).forEach(dayName => {
+    data.days[dayName].forEach((ex, idx) => {
+      if (ex.allVariants === undefined) {
+        ex.allVariants = [ex.name, ...(DEFAULT_ALTERNATES[ex.name] || [])];
+        ex.variantIndex = 0;
+        ex.anchor = idx === 0;
+        ex.lastRotated = ex.lastRotated || today;
+        changed = true;
+      }
+    });
+  });
+  if (changed) persist();
+}
+const STRETCH_KEY = 'workout_tracker_stretch_data_v1';
+const STRETCH_CHECK_KEY = 'workout_tracker_stretch_checks_v1';
+let stretchData = load(STRETCH_KEY) || JSON.parse(JSON.stringify(DEFAULT_STRETCHES));
+let stretchChecks = load(STRETCH_CHECK_KEY) || {};
+
+// Returns the editable stretch list for a day, seeding it from the fallback
+// template (and persisting that seed) the first time a custom day is opened.
+function getStretchesForDay(dayName) {
+  if (!stretchData[dayName]) {
+    stretchData[dayName] = JSON.parse(JSON.stringify(DEFAULT_STRETCHES_FALLBACK));
+    save(STRETCH_KEY, stretchData);
+  }
+  return stretchData[dayName];
+}
+function getChecksForDay(dayName) {
+  if (!stretchChecks[dayName]) stretchChecks[dayName] = { pre: [], post: [] };
+  const c = stretchChecks[dayName];
+  ['pre', 'post', 'prePack', 'postPack'].forEach(k => { if (!Array.isArray(c[k])) c[k] = []; });
+  return c;
+}
+function persistStretches() { save(STRETCH_KEY, stretchData); }
+function persistChecks() { save(STRETCH_CHECK_KEY, stretchChecks); }
+
+const NUTRITION_CONTENT = {
+  nutrition: [
+    ["Within ~45-60 min after training", "Aim for a mix of protein + carbs to support recovery"],
+    ["Protein options", "Chicken, eggs, greek yogurt, fish, tofu, or a protein shake — roughly a palm-sized portion"],
+    ["Carb options", "Rice, oats, potatoes, fruit, or whole-grain bread to refill energy stores"],
+    ["Simple combos", "Eggs + toast, chicken + rice, greek yogurt + banana + honey, protein shake + oats"],
+    ["Hydration", "Water throughout, and add electrolytes if the session was long or sweaty"],
+  ],
+};
+
+const PHASES = [
+  { name: 'Warm-up', seconds: 10 * 60, emoji: '🔥' },
+  { name: 'Training', seconds: 60 * 60, emoji: '🏋️' },
+  { name: 'Stretch', seconds: 10 * 60, emoji: '🧘' },
+];
+let timerState = { phaseIdx: 0, remaining: PHASES[0].seconds, running: false, intervalId: null };
+
+const STATE_KEY = 'workout_tracker_state_v3';
+const HISTORY_KEY = 'workout_tracker_history_v2';
+const BW_KEY = 'workout_tracker_bodyweight_v1';
+const BW_TARGET_KEY = 'workout_tracker_bw_target_v1';
+
+function debugLog(msg) {
+  const el = document.getElementById('debugStatus');
+  if (el) el.textContent = msg;
+}
+window.addEventListener('error', (e) => {
+  debugLog('⚠️ Error: ' + e.message + ' (line ' + e.lineno + ')');
+});
+
+const defaultWorkouts = {
+  order: ["Day 1 - Legs", "Day 2 - Push", "Day 3 - Pull", "Day 4 - Upper/Core"],
+  active: "Day 1 - Legs",
+  days: {
+    "Day 1 - Legs": [
+      { name: "Barbell Back Squat", target: "4 sets x 6-8 reps", sets: [{},{},{},{}] },
+      { name: "Romanian Deadlift", target: "3 sets x 8-10 reps", sets: [{},{},{}] },
+      { name: "Hack Squat / Leg Press", target: "3 sets x 10-12 reps", sets: [{},{},{}] },
+      { name: "Walking Lunges", target: "3 sets x 10/leg", sets: [{},{},{}] },
+      { name: "Standing Calf Raise", target: "4 sets x 12-15 reps", sets: [{},{},{},{}] },
+    ],
+    "Day 2 - Push": [
+      { name: "Barbell Bench Press", target: "4 sets x 6-8 reps", sets: [{},{},{},{}] },
+      { name: "Overhead Press", target: "3 sets x 8-10 reps", sets: [{},{},{}] },
+      { name: "Incline Dumbbell Press", target: "3 sets x 10-12 reps", sets: [{},{},{}] },
+      { name: "Lateral Raise", target: "3 sets x 12-15 reps", sets: [{},{},{}] },
+      { name: "Triceps Pushdown", target: "3 sets x 12-15 reps", sets: [{},{},{}] },
+    ],
+    "Day 3 - Pull": [
+      { name: "Deadlift", target: "3 sets x 5 reps", sets: [{},{},{}] },
+      { name: "Pull-ups / Lat Pulldown", target: "3 sets x 8-10 reps", sets: [{},{},{}] },
+      { name: "Barbell Row", target: "3 sets x 8-10 reps", sets: [{},{},{}] },
+      { name: "Face Pull", target: "3 sets x 12-15 reps", sets: [{},{},{}] },
+      { name: "Biceps Curl", target: "3 sets x 12 reps", sets: [{},{},{}] },
+    ],
+    "Day 4 - Upper/Core": [
+      { name: "Weighted Pull-ups", target: "3 sets x 6-8 reps", sets: [{},{},{}] },
+      { name: "Dumbbell Shoulder Press", target: "3 sets x 8-10 reps", sets: [{},{},{}] },
+      { name: "Chest-Supported Row", target: "3 sets x 10-12 reps", sets: [{},{},{}] },
+      { name: "Hanging Leg Raise", target: "3 sets x 12-15 reps", sets: [{},{},{}] },
+      { name: "Plank", target: "3 sets x 30-45 sec", sets: [{},{},{}] },
+    ],
+  }
+};
+
+let data = load(STATE_KEY) || defaultWorkouts;
+migrateExerciseVariants();
+correctPrepBlock();
+
+const RAMP_KEY = 'workout_tracker_ramp_v1';
+let rampState = load(RAMP_KEY) || {};
+setPushRampIfMissing();
+swapUpperCoreAnchorToLandmine();
+refineLandmineVariant();
+
+// User-requested equipment swaps: Romanian Deadlift is done with dumbbells
+// (not barbell), and Incline Press is done with a barbell (not dumbbells).
+// Renames whichever variant is currently active and folds the new name into
+// its rotation list so future swaps still work correctly. Safe to call every
+// load — no-ops once already adjusted.
+function adjustEquipmentPreferences() {
+  const today = todayStr();
+
+  function retarget(dayMatcher, candidateNames, newName) {
+    const dayName = data.order.find(d => dayMatcher.test(d));
+    if (!dayName) return;
+    const list = data.days[dayName];
+    const idx = list.findIndex(ex => candidateNames.includes(ex.name));
+    // A slot that alternates weekly (e.g. incline barbell / dumbbell) is left alone.
+    if (idx === -1 || list[idx].name === newName || list[idx].alternateWeekly) return;
+    const oldName = list[idx].name;
+    list[idx].name = newName;
+    if (list[idx].allVariants && list[idx].allVariants.length) {
+      const pos = list[idx].allVariants.indexOf(newName);
+      if (pos === -1) { list[idx].allVariants.unshift(newName); list[idx].variantIndex = 0; }
+      else { list[idx].variantIndex = pos; }
+    } else {
+      list[idx].allVariants = [newName];
+      list[idx].variantIndex = 0;
+    }
+    list[idx].lastRotated = today;
+    persist();
+
+    // Keep past logged sessions linked under the new name so progression
+    // tracking doesn't silently reset just because of an equipment relabel.
+    let historyChanged = false;
+    history.forEach(h => {
+      if (h.day !== dayName) return;
+      h.exercises.forEach(e => { if (e.name === oldName) { e.name = newName; historyChanged = true; } });
+    });
+    if (historyChanged) save(HISTORY_KEY, history);
+  }
+
+  retarget(/legs/i, ['Romanian Deadlift', 'Good Mornings', 'Single-Leg RDL', 'Romanian Deadlift (Dumbbell)'], 'Romanian Deadlift (Dumbbell)');
+  retarget(/push/i, ['Incline Dumbbell Press', 'Incline Barbell Press', 'Machine Chest Press'], 'Incline Barbell Press');
+}
+
+// Correction: user clarified the movement — standing, two hands on the bar,
+// twist/hinge at the hips lowering it to one side, drive up and press
+// across. That's a Landmine Rotational Squat-to-Press, not the half-kneeling
+// single-arm version set up initially. Preserves any sets already logged
+// today (it's a naming/form correction, not a new exercise).
+function refineLandmineVariant() {
+  const upperDay = data.order.find(d => /upper/i.test(d));
+  if (!upperDay) return;
+  const list = data.days[upperDay];
+  const idx = list.findIndex(ex => ex.name === 'Landmine Rotational Press (half-kneeling)');
+  if (idx === -1) return;
+  list[idx].name = 'Landmine Rotational Squat-to-Press';
+  list[idx].target = '3 sets x 10-12 reps, alternating sides';
+  list[idx].allVariants = ['Landmine Rotational Squat-to-Press'];
+  persist();
+}
+
+// One-time, user-requested: swap the Day 4 anchor lift from Weighted
+// Pull-ups to a half-kneeling Landmine Rotational Press (shoulder + core
+// anti-rotation + upper-back stabilization in one movement). Keeps anchor
+// status so long-term progress tracking continues on the new lift.
+function swapUpperCoreAnchorToLandmine() {
+  const upperDay = data.order.find(d => /upper/i.test(d));
+  if (!upperDay) return;
+  const list = data.days[upperDay];
+  const idx = list.findIndex(ex => ex.name === 'Weighted Pull-ups');
+  if (idx === -1) return;
+  const today = todayStr();
+  list[idx] = {
+    name: 'Landmine Rotational Press (half-kneeling)',
+    target: '3 sets x 8-10 reps each side',
+    sets: list[idx].sets.map(() => ({})),
+    allVariants: ['Landmine Rotational Press (half-kneeling)'],
+    variantIndex: 0,
+    anchor: true,
+    lastRotated: today
+  };
+  persist();
+}
+
+// One-time: start a 2-week "ramp back" reminder on Push day, since strength
+// there dropped after a month off training. Auto-expires on its own —
+// no cleanup needed later.
+function setPushRampIfMissing() {
+  const pushDay = data.order.find(d => /push/i.test(d));
+  if (!pushDay || rampState[pushDay]) return;
+  const until = new Date();
+  until.setDate(until.getDate() + 14);
+  rampState[pushDay] = { until: todayStr(until) };
+  save(RAMP_KEY, rampState);
+}
+
+// Correction: earlier assumed Pull day was the weak point and added dead
+// hangs + face pulls to Leg day for that. Actually Push day is the issue,
+// so this removes those (if present) and adds light triceps extension +
+// banded external rotation instead — targeting the triceps lockout strength
+// and shoulder stability that usually bottleneck pressing. Safe to call
+// every load — no-ops once corrected.
+function correctPrepBlock() {
+  const legDay = data.order.find(d => /legs/i.test(d));
+  if (!legDay) return;
+  const list = data.days[legDay];
+  let changed = false;
+
+  const removeNames = ['Dead Hang', 'Face Pull / Band Pull-Apart'];
+  for (let i = list.length - 1; i >= 0; i--) {
+    if (removeNames.includes(list[i].name)) { list.splice(i, 1); changed = true; }
+  }
+
+  if (!list.some(ex => ex.name === 'Triceps Extension (light)')) {
+    const today = todayStr();
+    list.push(
+      { name: 'Triceps Extension (light)', target: '3 sets x 15 reps', sets: [{},{},{}], allVariants: ['Triceps Extension (light)', 'Triceps Pushdown', 'Skull Crushers'], variantIndex: 0, anchor: false, lastRotated: today },
+      { name: 'Banded External Rotation', target: '3 sets x 15 reps', sets: [{},{},{}], allVariants: ['Banded External Rotation'], variantIndex: 0, anchor: false, lastRotated: today }
+    );
+    changed = true;
+  }
+  if (changed) persist();
+}
+let history = load(HISTORY_KEY) || [];
+let bodyweightLog = load(BW_KEY) || [];
+let bwTarget = load(BW_TARGET_KEY);
+if (!bwTarget) {
+  bwTarget = { weight: 78, date: '2026-12-31' };
+  save(BW_TARGET_KEY, bwTarget);
+}
+migrateOrphanedHistory();
+adjustEquipmentPreferences();
+restoreCurlTabs();
+fixBodyweightCoreMoves();
+mergeCurlTabsIntoPullDay();
+
+// Correction (user clarified): Barbell and Dumbbell Bicep Curls are not
+// separate sessions — they are exercises done on Day 3 (Pull). Moves them
+// into the Pull day (replacing the generic "Biceps Curl" placeholder),
+// removes the two stand-alone tabs, and relinks any sessions saved under
+// those tabs so no history is lost. Safe to run every load.
+function mergeCurlTabsIntoPullDay() {
+  const CURL_TABS = ['Barbell Bicep Curl', 'Dumbbell Bicep Curl'];
+  const pullDay = data.order.find(d => /pull/i.test(d) && !CURL_TABS.includes(d));
+  if (!pullDay) return;
+  const pullList = data.days[pullDay];
+  let changed = false;
+
+  CURL_TABS.forEach(tab => {
+    if (!data.days[tab] && !data.order.includes(tab)) return;
+    (data.days[tab] || []).forEach(ex => {
+      if (!pullList.some(e => e.name === ex.name)) {
+        pullList.push(Object.assign({}, ex, { anchor: false }));
+      }
+    });
+    delete data.days[tab];
+    data.order = data.order.filter(n => n !== tab);
+    if (data.active === tab) data.active = pullDay;
+    changed = true;
+  });
+  if (!changed) return;
+
+  // Drop the generic placeholder now that the specific curls are here.
+  const hasSpecific = pullList.some(e => CURL_TABS.includes(e.name));
+  const genIdx = pullList.findIndex(e => ['Biceps Curl', 'Hammer Curl', 'Preacher Curl'].includes(e.name));
+  if (hasSpecific && genIdx !== -1) pullList.splice(genIdx, 1);
+  persist();
+
+  // Relink history saved under the old curl tabs to the Pull day.
+  let hChanged = false;
+  const merged = [];
+  history.forEach(h => {
+    if (!CURL_TABS.includes(h.day)) { merged.push(h); return; }
+    hChanged = true;
+    const sameDay = merged.find(m => m.day === pullDay && m.date === h.date)
+      || history.find(m => m.day === pullDay && m.date === h.date && m !== h);
+    if (sameDay) {
+      h.exercises.forEach(ex => {
+        if (!sameDay.exercises.some(e => e.name === ex.name)) sameDay.exercises.push(ex);
+      });
+    } else {
+      h.day = pullDay;
+      merged.push(h);
+    }
+  });
+  if (hChanged) { history = merged; save(HISTORY_KEY, history); }
+}
+
+// How each exercise is logged:
+//   'weight' = weight (kg) x reps   (default, for loaded lifts)
+//   'reps'   = reps only             (bodyweight moves, e.g. leg raises)
+//   'time'   = seconds held          (holds, e.g. planks)
+// An explicit ex.mode (set via the tap-to-change chip) wins; otherwise the
+// mode is inferred from the exercise name.
+const MODE_LABELS = { weight: 'kg × reps', reps: 'reps only (bodyweight)', time: 'seconds (hold)' };
+function inferMode(name) {
+  const n = (name || '').toLowerCase();
+  if (/plank|hold|dead hang|wall sit/.test(n)) return 'time';
+  if (/leg raise|dead bug|ab wheel|push-up|pushup|sit-up|crunch(?!.*cable)/.test(n)) return 'reps';
+  return 'weight';
+}
+function modeFor(ex) { return (ex && ex.mode) || inferMode(ex && ex.name); }
+function formatSets(sets, mode) {
+  return (sets || []).filter(s => s.weight || s.reps || s.secs).map(s => {
+    if (mode === 'time') return `${s.secs || s.reps || '-'} sec`;
+    if (mode === 'reps') return `${s.reps || '-'} reps`;
+    return `${s.weight || '-'}kg x ${s.reps || '-'}`;
+  }).join(', ');
+}
+
+// Correction (user clarified): Plank is NOT weighted — it's logged in
+// seconds per set (4 sets x 60 sec). Leg raises are NOT weighted either —
+// bodyweight, 15 reps per set. Sets the right mode/target on every day that
+// has them and clears any weight values entered by mistake. Runs once.
+function fixBodyweightCoreMoves() {
+  const FLAG = 'workout_tracker_core_modes_fixed_v1';
+  if (load(FLAG)) return;
+  Object.keys(data.days).forEach(dayName => {
+    data.days[dayName].forEach(ex => {
+      if (/plank/i.test(ex.name)) {
+        ex.mode = 'time';
+        ex.target = '4 sets x 60 sec';
+        while (ex.sets.length < 4) ex.sets.push({});
+        ex.sets.forEach(s => {
+          if (!s.secs && s.reps) s.secs = s.reps;
+          delete s.weight; delete s.reps;
+        });
+      } else if (/leg raise/i.test(ex.name)) {
+        ex.mode = 'reps';
+        ex.target = `${ex.sets.length || 3} sets x 15 reps`;
+        ex.sets.forEach(s => { delete s.weight; });
+      }
+    });
+  });
+  persist();
+  let hChanged = false;
+  history.forEach(h => (h.exercises || []).forEach(e => {
+    if (/plank/i.test(e.name)) {
+      e.mode = 'time';
+      e.sets.forEach(s => { if (!s.secs && s.reps) s.secs = s.reps; s.weight = ''; s.reps = ''; });
+      hChanged = true;
+    } else if (/leg raise/i.test(e.name)) {
+      e.mode = 'reps';
+      e.sets.forEach(s => { s.weight = ''; });
+      hChanged = true;
+    }
+  }));
+  if (hChanged) save(HISTORY_KEY, history);
+  save(FLAG, true);
+}
+
+// One-time restore of the two bicep tabs that were accidentally deleted.
+// Adds them back only if missing, then sets a flag so that if you delete
+// them again on purpose they stay deleted. Fully editable like any other tab.
+function restoreCurlTabs() {
+  const FLAG = 'workout_tracker_curl_tabs_restored_v1';
+  if (load(FLAG)) return;
+  const today = todayStr();
+  const mk = (name, target, nSets, variants) => ({
+    name, target,
+    sets: Array.from({ length: nSets }, () => ({})),
+    allVariants: variants, variantIndex: 0, anchor: false, lastRotated: today
+  });
+  const tabs = {
+    "Barbell Bicep Curl": [
+      Object.assign(mk("Barbell Bicep Curl", "4 sets x 8-10 reps", 4, ["Barbell Bicep Curl", "EZ-Bar Curl", "Preacher Curl"]), { anchor: true }),
+    ],
+    "Dumbbell Bicep Curl": [
+      Object.assign(mk("Dumbbell Bicep Curl", "3 sets x 10-12 reps", 3, ["Dumbbell Bicep Curl", "Incline Dumbbell Curl", "Hammer Curl"]), { anchor: true }),
+    ],
+  };
+  Object.keys(tabs).forEach(name => {
+    if (!data.order.includes(name)) data.order.push(name);
+    if (!data.days[name]) data.days[name] = tabs[name];
+  });
+  persist();
+  save(FLAG, true);
+}
+
+// If a history entry's "day" label no longer exists in the current day order
+// (e.g. it was saved back when leg day was named/ordered differently), find
+// the current day whose exercises best match that entry's exercises and
+// relink it there — so no saved session goes missing after reordering/renaming days.
+function migrateOrphanedHistory() {
+  try {
+    let changed = false;
+    history.forEach(entry => {
+      if (!entry || !Array.isArray(entry.exercises)) return; // skip malformed entries, don't crash
+      if (data.order.includes(entry.day)) return; // already matches a current day, leave it alone
+      const entryNames = new Set(entry.exercises.map(e => e && e.name).filter(Boolean));
+      let bestDay = null, bestScore = 0;
+      data.order.forEach(dayName => {
+        const dayNames = (data.days[dayName] || []).map(e => e.name);
+        const overlap = dayNames.filter(n => entryNames.has(n)).length;
+        if (overlap > bestScore) { bestScore = overlap; bestDay = dayName; }
+      });
+      if (bestDay && bestScore > 0) {
+        entry.day = bestDay;
+        changed = true;
+      }
+    });
+    if (changed) save(HISTORY_KEY, history);
+  } catch (e) {
+    console.error('history migration failed, continuing without it', e);
+  }
+}
+
+function load(key) {
+  try {
+    const raw = localStorage.getItem(key);
+    return raw ? JSON.parse(raw) : null;
+  } catch (e) { console.error('load failed', key, e); return null; }
+}
+function save(key, val) {
+  try { localStorage.setItem(key, JSON.stringify(val)); }
+  catch (e) { console.error('save failed', key, e); }
+}
+function persist() { save(STATE_KEY, data); }
+function escapeHtml(str) {
+  const div = document.createElement('div');
+  div.textContent = str || '';
+  return div.innerHTML;
+}
+
+// Inline replacement for prompt()/confirm() — native browser dialogs can be
+// silently blocked inside a sandboxed hosting environment, which made
+// "+ New workout" (and similar buttons) appear completely dead with zero
+// feedback. This renders a real on-page dialog instead, so it always works.
+function showInlineDialog({ message, showInput, inputPlaceholder, confirmText, cancelText, danger, onConfirm }) {
+  const overlay = document.createElement('div');
+  overlay.style.cssText = 'position:fixed; inset:0; background:rgba(0,0,0,0.5); display:flex; align-items:center; justify-content:center; z-index:1000; padding:20px;';
+  const box = document.createElement('div');
+  box.style.cssText = 'background:var(--card); border-radius:14px; padding:20px; max-width:360px; width:100%; border:1px solid var(--border);';
+  box.innerHTML = `
+    <div style="margin-bottom:14px; color:var(--text);">${escapeHtml(message)}</div>
+    ${showInput ? `<input id="inlineDialogInput" type="text" placeholder="${escapeHtml(inputPlaceholder || '')}" style="margin-bottom:14px;">` : ''}
+    <div style="display:flex; gap:8px; justify-content:flex-end;">
+      <button id="inlineDialogCancel" class="secondary" style="padding:9px 14px;">${escapeHtml(cancelText || 'Cancel')}</button>
+      <button id="inlineDialogConfirm" class="primary" style="flex:none; padding:9px 14px;${danger ? ' background:var(--bad);' : ''}">${escapeHtml(confirmText || 'OK')}</button>
+    </div>
+  `;
+  overlay.appendChild(box);
+  document.body.appendChild(overlay);
+  const input = box.querySelector('#inlineDialogInput');
+  if (input) setTimeout(() => input.focus(), 50);
+  const close = () => overlay.remove();
+  box.querySelector('#inlineDialogCancel').addEventListener('click', close);
+  overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
+  box.querySelector('#inlineDialogConfirm').addEventListener('click', () => {
+    const value = input ? input.value.trim() : true;
+    close();
+    onConfirm(value);
+  });
+  if (input) input.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') box.querySelector('#inlineDialogConfirm').click();
+  });
+}
+
+function currentExercises() {
+  return data.days[data.active];
+}
+
+// Multi-field version of the inline dialog, for editing/adding a stretch
+// (name + dosage + safety cue) in one go instead of three sequential popups.
+function showInlineFormDialog({ title, fields, confirmText, onConfirm, onDelete }) {
+  const overlay = document.createElement('div');
+  overlay.style.cssText = 'position:fixed; inset:0; background:rgba(0,0,0,0.5); display:flex; align-items:center; justify-content:center; z-index:1000; padding:20px;';
+  const box = document.createElement('div');
+  box.style.cssText = 'background:var(--card); border-radius:14px; padding:20px; max-width:380px; width:100%; border:1px solid var(--border); max-height:85vh; overflow-y:auto;';
+  const fieldsHtml = fields.map((f, i) => `
+    <div style="margin-bottom:12px;">
+      <div style="font-size:0.78rem; color:var(--muted); margin-bottom:4px;">${escapeHtml(f.label)}</div>
+      <input id="formField${i}" type="text" placeholder="${escapeHtml(f.placeholder || '')}" value="${escapeHtml(f.value || '')}">
+    </div>`).join('');
+  box.innerHTML = `
+    <div style="font-weight:600; margin-bottom:14px; color:var(--text);">${escapeHtml(title)}</div>
+    ${fieldsHtml}
+    <div style="display:flex; gap:8px; justify-content:${onDelete ? 'space-between' : 'flex-end'}; margin-top:6px;">
+      ${onDelete ? `<button id="formDialogDelete" class="del-day" style="color:#c0392b;">Delete stretch</button>` : ''}
+      <div style="display:flex; gap:8px;">
+        <button id="formDialogCancel" class="secondary" style="padding:9px 14px;">Cancel</button>
+        <button id="formDialogConfirm" class="primary" style="flex:none; padding:9px 14px;">${escapeHtml(confirmText || 'Save')}</button>
+      </div>
+    </div>
+  `;
+  overlay.appendChild(box);
+  document.body.appendChild(overlay);
+  const firstInput = box.querySelector('#formField0');
+  if (firstInput) setTimeout(() => firstInput.focus(), 50);
+  const close = () => overlay.remove();
+  box.querySelector('#formDialogCancel').addEventListener('click', close);
+  overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
+  if (onDelete) {
+    box.querySelector('#formDialogDelete').addEventListener('click', () => { close(); showInlineDialog({ message: 'Delete this stretch?', confirmText: 'Yes, delete', cancelText: 'No', danger: true, onConfirm: onDelete }); });
+  }
+  box.querySelector('#formDialogConfirm').addEventListener('click', () => {
+    const values = fields.map((f, i) => box.querySelector('#formField' + i).value.trim());
+    close();
+    onConfirm(values);
+  });
+}
+
+function renderTabs() {
+  const tabs = document.getElementById('dayTabs');
+  tabs.innerHTML = '';
+  data.order.forEach(name => {
+    const btn = document.createElement('button');
+    btn.className = 'day-tab' + (name === data.active ? ' active' : '');
+    btn.textContent = name;
+    btn.addEventListener('click', () => { data.active = name; persist(); renderAll(); });
+    tabs.appendChild(btn);
+  });
+  const addBtn = document.createElement('button');
+  addBtn.className = 'day-tab add';
+  addBtn.textContent = '+ New workout';
+  addBtn.addEventListener('click', () => {
+    showInlineDialog({
+      message: 'Name this workout:',
+      showInput: true,
+      inputPlaceholder: 'e.g. "Arm Day", "Cardio"',
+      confirmText: 'Create',
+      onConfirm: (name) => {
+        if (!name) return;
+        if (data.days[name]) { showInlineDialog({ message: 'That workout already exists.', confirmText: 'OK', onConfirm: () => {} }); return; }
+        data.order.push(name);
+        data.days[name] = [];
+        data.active = name;
+        persist();
+        renderAll();
+      }
+    });
+  });
+  tabs.appendChild(addBtn);
+}
+
+function renderDayTitle() {
+  const t = document.getElementById('dayTitle');
+  t.textContent = data.active;
+  document.getElementById('deleteDayBtn').style.display = data.order.length > 1 ? 'inline' : 'none';
+
+  const banner = document.getElementById('rampBanner');
+  const ramp = rampState[data.active];
+  const today = todayStr();
+  if (ramp && today <= ramp.until) {
+    const daysLeft = Math.max(0, Math.ceil((new Date(ramp.until) - new Date(today)) / 86400000));
+    banner.innerHTML = `
+      <div class="card" style="background:var(--accent-soft); border:1px solid var(--accent); padding:12px; margin-bottom:14px; display:flex; justify-content:space-between; align-items:center; gap:10px;">
+        <div style="font-size:0.82rem;">🔄 <strong>Ramping back in</strong> — aim for ~80% of your pre-break weights, clean form over load. ${daysLeft} day${daysLeft === 1 ? '' : 's'} left.</div>
+        <button class="del-btn" id="rampDismiss" style="font-size:0.9rem; flex:none;">✕</button>
+      </div>`;
+  } else {
+    banner.innerHTML = '';
+  }
+}
+
+document.body.addEventListener('click', (e) => {
+  if (e.target && e.target.id === 'rampDismiss') {
+    delete rampState[data.active];
+    save(RAMP_KEY, rampState);
+    renderDayTitle();
+  }
+});
+
+// Double-progression check: if the target has a rep range (e.g. "3 sets x
+// 8-10 reps") and the most recent logged session for this exercise+day hit
+// the TOP of that range on every logged set, it's time to add weight next
+// time rather than more reps. Targets without a numeric range (time holds,
+// fixed single rep counts) are skipped — nothing to compare against.
+function getProgressionStatus(ex) {
+  if (modeFor(ex) !== 'weight') return false; // bodyweight/time moves: no "+2.5kg" advice
+  const match = (ex.target || '').match(/(\d+)\s*-\s*(\d+)\s*reps?/i);
+  if (!match) return false;
+  const topOfRange = parseInt(match[2], 10);
+  const relevant = history.filter(h => h.day === data.active).sort((a, b) => b.date.localeCompare(a.date));
+  const lastSession = relevant.find(h => h.exercises.some(e => e.name === ex.name));
+  if (!lastSession) return false;
+  const loggedEx = lastSession.exercises.find(e => e.name === ex.name);
+  const loggedSets = loggedEx.sets.filter(s => s.reps !== '' && s.reps != null);
+  if (!loggedSets.length) return false;
+  return loggedSets.every(s => parseInt(s.reps, 10) >= topOfRange);
+}
+
+function renderExercises() {
+  const container = document.getElementById('exercises');
+  container.innerHTML = '';
+  const list = currentExercises();
+
+  if (!list.length) {
+    const note = document.createElement('div');
+    note.className = 'card empty-note';
+    note.textContent = 'No exercises yet — add your first one below.';
+    container.appendChild(note);
+    return;
+  }
+
+  list.forEach((ex, exIdx) => {
+    const card = document.createElement('div');
+    card.className = 'card';
+
+    const weeksSince = ex.lastRotated ? Math.floor((Date.now() - new Date(ex.lastRotated)) / (7 * 24 * 3600 * 1000)) : 0;
+    const canSwap = !ex.anchor && ex.allVariants && ex.allVariants.length > 1;
+    const dueForRotation = canSwap && weeksSince >= ROTATION_WEEKS;
+    const readyToProgress = getProgressionStatus(ex);
+    const prevSets = getLastSetsFor(data.active, ex.name);
+
+    const header = document.createElement('div');
+    header.className = 'ex-header';
+    const demoUrl = 'https://www.youtube.com/results?search_query=' + encodeURIComponent(ex.name + ' correct form tutorial');
+    header.innerHTML = `
+      <div style="flex:1;">
+        <div class="ex-name" contenteditable="true" data-idx="${exIdx}">${escapeHtml(ex.name)}</div>
+        <div class="ex-target" contenteditable="true" data-target-idx="${exIdx}">${escapeHtml(ex.target || '')}</div>
+        ${ex.anchor ? `<div style="font-size:0.72rem; color:var(--muted); margin-top:3px;">⚓ anchor lift — kept fixed to track progress</div>` : ''}
+        ${ex.alternateWeekly ? `<div style="font-size:0.72rem; color:var(--accent); margin-top:3px;">🔁 Alternates weekly · this week: <strong>${escapeHtml(altLabel(ex, 0))}</strong>, next week: ${escapeHtml(altLabel(ex, 1))}</div>` : ''}
+        ${dueForRotation ? `<div style="font-size:0.72rem; color:var(--accent); margin-top:3px;">🔁 ${weeksSince}wk on this — consider rotating</div>` : ''}
+        ${readyToProgress ? `<div style="font-size:0.72rem; color:#2e8b57; margin-top:3px; font-weight:600;">🔼 Ready to progress — try +2.5kg next session</div>` : ''}
+        <a href="${demoUrl}" target="_blank" rel="noopener" style="font-size:0.72rem; color:var(--accent); text-decoration:underline; display:inline-block; margin-top:4px;">▶ Watch demo</a>
+        <button class="del-btn" data-mode-ex="${exIdx}" title="Change how this exercise is logged" style="font-size:0.72rem; color:var(--muted); border:1px solid var(--border); border-radius:12px; padding:2px 8px; margin-left:8px;">Logged as: ${MODE_LABELS[modeFor(ex)]} ⇄</button>
+        ${ex.note ? `<div class="ex-note">📝 ${escapeHtml(ex.note)}</div>` : ''}
+        <div class="chip-row">
+          ${prevSets ? `<button class="chip" data-copy-last="${exIdx}">⤵ Fill from last time</button>` : ''}
+          <button class="chip" data-note-ex="${exIdx}">📝 ${ex.note ? 'Edit note' : 'Add note'}</button>
+          ${modeFor(ex) === 'weight' && isBarbell(ex.name) ? `<button class="chip" data-plates-ex="${exIdx}">🧮 Plates & warm-up</button>` : ''}
+          <span style="font-size:0.72rem; color:var(--muted); align-self:center;">⏱ rest ${fmtClock(restFor(ex))}</span>
+        </div>
+      </div>
+      ${canSwap ? `<button class="del-btn" data-swap-ex="${exIdx}" title="Swap for a same-muscle alternate" style="font-size:0.95rem;">🔄</button>` : ''}
+      <button class="del-btn" data-remove-ex="${exIdx}">✕</button>
+    `;
+    card.appendChild(header);
+
+    const mode = modeFor(ex);
+    const single = mode !== 'weight';
+    const heads = document.createElement('div');
+    heads.className = 'col-heads' + (single ? ' single' : '');
+    heads.innerHTML = single
+      ? `<span>#</span><span>${mode === 'time' ? 'Seconds' : 'Reps'}</span><span style="text-align:center;">RIR</span><span style="text-align:center;">Done</span><span></span>`
+      : `<span>#</span><span>kg</span><span>Reps</span><span style="text-align:center;">RIR</span><span style="text-align:center;">Done</span><span></span>`;
+    card.appendChild(heads);
+    // Ghost placeholders = last session's numbers for the same set (bumped
+    // +2.5kg when double progression says it's time), so last week stays
+    // visible as a guide without filling the boxes.
+    const ghost = (setIdx, field) => {
+      const p = prevSets && (prevSets[setIdx] || prevSets[prevSets.length - 1]);
+      if (!p || !p[field]) return '';
+      if (field === 'weight' && readyToProgress) return String(Math.round((parseFloat(p.weight) + 2.5) * 100) / 100);
+      return String(p[field]);
+    };
+    ex.sets.forEach((set, setIdx) => {
+      const row = document.createElement('div');
+      row.className = 'set-row v2' + (single ? ' single' : '') + (set.done ? ' done' : '');
+      let inputs;
+      if (mode === 'time') {
+        inputs = `<input type="number" inputmode="numeric" placeholder="${ghost(setIdx, 'secs') || 'sec'}" value="${set.secs ?? ''}" data-ex="${exIdx}" data-set="${setIdx}" data-field="secs" aria-label="Seconds held, set ${setIdx + 1}">`;
+      } else if (mode === 'reps') {
+        inputs = `<input type="number" inputmode="numeric" placeholder="${ghost(setIdx, 'reps') || 'reps'}" value="${set.reps ?? ''}" data-ex="${exIdx}" data-set="${setIdx}" data-field="reps" aria-label="Reps, set ${setIdx + 1}">`;
+      } else {
+        inputs = `<input type="number" inputmode="decimal" placeholder="${ghost(setIdx, 'weight') || 'kg'}" value="${set.weight ?? ''}" data-ex="${exIdx}" data-set="${setIdx}" data-field="weight" aria-label="Weight kg, set ${setIdx + 1}">
+        <input type="number" inputmode="numeric" placeholder="${ghost(setIdx, 'reps') || 'reps'}" value="${set.reps ?? ''}" data-ex="${exIdx}" data-set="${setIdx}" data-field="reps" aria-label="Reps, set ${setIdx + 1}">`;
+      }
+      row.innerHTML = `
+        <div class="set-num">${setIdx + 1}</div>
+        ${inputs}
+        <input class="rir-input" type="number" inputmode="numeric" min="0" max="5" placeholder="${mesoInfo().rir}" value="${set.rir ?? ''}" data-ex="${exIdx}" data-set="${setIdx}" data-field="rir" aria-label="Reps in reserve, set ${setIdx + 1}">
+        <button class="done-btn${set.done ? ' on' : ''}" data-done="${exIdx}:${setIdx}" aria-label="Mark set ${setIdx + 1} done">✓</button>
+        <button class="del-btn" data-remove-set="${exIdx}:${setIdx}" aria-label="Remove set">✕</button>
+      `;
+      card.appendChild(row);
+    });
+
+    const addSetBtn = document.createElement('button');
+    addSetBtn.className = 'add-set';
+    addSetBtn.textContent = '+ add set';
+    addSetBtn.dataset.addSet = exIdx;
+    card.appendChild(addSetBtn);
+
+    const lastSession = getLastSessionFor(data.active, ex.name);
+    if (lastSession) {
+      const hist = document.createElement('div');
+      hist.className = 'history';
+      const best = mode === 'weight' ? bestE1RM(ex.name) : 0;
+      hist.innerHTML = `Last time (${lastSession.date}): <strong>${lastSession.summary}</strong>` +
+        (best ? `<br>🏆 Best estimated 1-rep max: <strong class="num">${best.toFixed(1)} kg</strong>` : '');
+      card.appendChild(hist);
+    }
+
+    container.appendChild(card);
+  });
+}
+
+function getLastSessionFor(dayName, exName) {
+  for (let i = history.length - 1; i >= 0; i--) {
+    if (history[i].day !== dayName) continue;
+    const ex = history[i].exercises.find(e => e.name === exName);
+    if (ex) {
+      const current = (data.days[dayName] || []).find(e => e.name === exName);
+      const summary = formatSets(ex.sets, ex.mode || modeFor(current || ex));
+      if (summary) return { date: history[i].date, summary };
+    }
+  }
+  return null;
+}
+
+function renderAll() {
+  rolloverIfStale(data.active);
+  renderTabs();
+  renderDayTitle();
+  renderMesoBanner();
+  renderRolloverBanner();
+  renderExercises();
+  document.getElementById('historyPanel').style.display = 'none';
+  document.getElementById('nutritionPanel').style.display = 'none';
+  document.getElementById('volumePanel').style.display = 'none';
+  document.getElementById('backupPanel').style.display = 'none';
+  document.getElementById('restorePanel').style.display = 'none';
+}
+
+// Exercise interactions
+document.getElementById('exercises').addEventListener('input', (e) => {
+  const t = e.target;
+  const list = currentExercises();
+  if (t.dataset.ex !== undefined && t.dataset.set !== undefined && t.dataset.field) {
+    list[+t.dataset.ex].sets[+t.dataset.set][t.dataset.field] = t.value;
+    markSessionActive();
+    persist();
+  }
+  if (t.dataset.idx !== undefined) {
+    list[+t.dataset.idx].name = t.textContent;
+    persist();
+  }
+  if (t.dataset.targetIdx !== undefined) {
+    list[+t.dataset.targetIdx].target = t.textContent;
+    persist();
+  }
+});
+
+document.getElementById('exercises').addEventListener('click', (e) => {
+  const t = e.target;
+  const list = currentExercises();
+  if (t.dataset.addSet !== undefined) {
+    list[+t.dataset.addSet].sets.push({});
+    persist(); renderExercises();
+  }
+  if (t.dataset.removeSet !== undefined) {
+    const [exIdx, setIdx] = t.dataset.removeSet.split(':').map(Number);
+    const doRemove = () => { list[exIdx].sets.splice(setIdx, 1); persist(); renderExercises(); };
+    // Empty sets go straight away; a set with numbers in it asks first.
+    if (setHasValue(list[exIdx].sets[setIdx])) {
+      showInlineDialog({ message: `Delete set ${setIdx + 1} of ${list[exIdx].name}?`, confirmText: 'Yes, delete', cancelText: 'No', danger: true, onConfirm: doRemove });
+    } else doRemove();
+  }
+  if (t.dataset.removeEx !== undefined) {
+    const idx = +t.dataset.removeEx;
+    const ex = list[idx];
+    const day = data.active;
+    showInlineDialog({
+      message: `Delete "${ex.name}" from ${day}? Your logged sessions stay in History, and you can bring it back with "Restore removed exercises".`,
+      confirmText: 'Yes, delete',
+      cancelText: 'No',
+      danger: true,
+      onConfirm: () => {
+        const pos = data.days[day].indexOf(ex);
+        if (pos === -1) return;
+        data.days[day].splice(pos, 1);
+        data.trash = data.trash || [];
+        data.trash.unshift({ day, idx: pos, ex: JSON.parse(JSON.stringify(ex)), date: todayStr() });
+        data.trash = data.trash.slice(0, 30);
+        persist(); renderExercises();
+        showToast('Deleted · tap Restore removed exercises to undo');
+      }
+    });
+  }
+  if (t.dataset.swapEx !== undefined) {
+    const ex = list[+t.dataset.swapEx];
+    ex.variantIndex = (ex.variantIndex + 1) % ex.allVariants.length;
+    ex.name = ex.allVariants[ex.variantIndex];
+    ex.lastRotated = todayStr();
+    delete ex.mode; // new variant: let its name decide how it's logged
+    persist(); renderExercises();
+  }
+  if (t.dataset.modeEx !== undefined) {
+    const ex = list[+t.dataset.modeEx];
+    const order = ['weight', 'reps', 'time'];
+    ex.mode = order[(order.indexOf(modeFor(ex)) + 1) % order.length];
+    persist(); renderExercises();
+  }
+  if (t.dataset.done !== undefined) {
+    const [exIdx, setIdx] = t.dataset.done.split(':').map(Number);
+    const ex = list[exIdx];
+    const set = ex.sets[setIdx];
+    const mode = modeFor(ex);
+    // Ticking an empty set accepts the ghost numbers from last time.
+    if (!set.done) {
+      const prev = getLastSetsFor(data.active, ex.name);
+      const p = prev && (prev[setIdx] || prev[prev.length - 1]);
+      if (p) {
+        if (mode === 'weight') {
+          if (!set.weight && p.weight) set.weight = getProgressionStatus(ex) ? String(Math.round((parseFloat(p.weight) + 2.5) * 100) / 100) : p.weight;
+          if (!set.reps && p.reps) set.reps = p.reps;
+        } else if (mode === 'reps' && !set.reps && p.reps) set.reps = p.reps;
+        else if (mode === 'time' && !set.secs && p.secs) set.secs = p.secs;
+      }
+    }
+    set.done = !set.done;
+    markSessionActive();
+    persist(); renderExercises();
+    if (set.done) {
+      keepAwake();
+      const isLastSet = ex.sets.every(s => s.done);
+      startRest(restFor(ex), isLastSet ? 'Next exercise' : `${ex.name} · set ${setIdx + 2}`);
+      if (mode === 'weight' && set.weight && set.reps) {
+        const e = e1rm(set.weight, set.reps);
+        const prevBest = bestE1RM(ex.name);
+        if (prevBest && e > prevBest + 0.01) showToast(`🏆 New best for ${ex.name}: ~${e.toFixed(1)} kg 1RM`);
+      }
+    }
+  }
+  if (t.dataset.copyLast !== undefined) {
+    const ex = list[+t.dataset.copyLast];
+    const prev = getLastSetsFor(data.active, ex.name) || [];
+    const bump = getProgressionStatus(ex);
+    while (ex.sets.length < prev.length) ex.sets.push({});
+    ex.sets.forEach((s, i) => {
+      const p = prev[i] || prev[prev.length - 1];
+      if (!p) return;
+      s.weight = p.weight ? (bump ? String(Math.round((parseFloat(p.weight) + 2.5) * 100) / 100) : p.weight) : (s.weight || '');
+      s.reps = p.reps || s.reps || '';
+      s.secs = p.secs || s.secs || '';
+    });
+    markSessionActive();
+    persist(); renderExercises();
+    showToast(bump ? 'Filled with last time +2.5 kg' : 'Filled from last time');
+  }
+  if (t.dataset.noteEx !== undefined) {
+    const ex = list[+t.dataset.noteEx];
+    showInlineFormDialog({
+      title: 'Note for ' + ex.name,
+      confirmText: 'Save note',
+      fields: [{ label: 'Seat height, grip, cues, pain to watch…', placeholder: 'e.g. "Seat on 4, grip just outside shoulders"', value: ex.note || '' }],
+      onConfirm: ([note]) => { ex.note = note; persist(); renderExercises(); }
+    });
+  }
+  if (t.dataset.platesEx !== undefined) {
+    openPlateDialog(list[+t.dataset.platesEx]);
+  }
+});
+
+document.getElementById('addExerciseBtn').addEventListener('click', () => {
+  showInlineDialog({
+    message: 'Exercise name:',
+    showInput: true,
+    inputPlaceholder: 'e.g. "Bulgarian Split Squat"',
+    confirmText: 'Next',
+    onConfirm: (name) => {
+      if (!name) return;
+      showInlineDialog({
+        message: 'Target (optional):',
+        showInput: true,
+        inputPlaceholder: 'e.g. "3 sets x 10 reps"',
+        confirmText: 'Add',
+        onConfirm: (target) => {
+          currentExercises().push({
+            name, target: target || '', sets: [{},{},{}],
+            allVariants: [name], variantIndex: 0, anchor: false,
+            lastRotated: todayStr()
+          });
+          persist();
+          renderExercises();
+        }
+      });
+    }
+  });
+});
+
+// Day title editing
+document.getElementById('dayTitle').addEventListener('blur', (e) => {
+  const newName = e.target.textContent.trim();
+  if (!newName || newName === data.active) { e.target.textContent = data.active; return; }
+  if (data.days[newName]) {
+    showInlineDialog({ message: 'A workout with that name already exists.', confirmText: 'OK', onConfirm: () => {} });
+    e.target.textContent = data.active;
+    return;
+  }
+  data.days[newName] = data.days[data.active];
+  delete data.days[data.active];
+  const idx = data.order.indexOf(data.active);
+  data.order[idx] = newName;
+  // rename in history too, so past logs stay linked
+  history.forEach(h => { if (h.day === data.active) h.day = newName; });
+  data.active = newName;
+  persist();
+  save(HISTORY_KEY, history);
+  renderAll();
+});
+
+document.getElementById('deleteDayBtn').addEventListener('click', () => {
+  if (data.order.length <= 1) return;
+  showInlineDialog({
+    message: `Delete "${data.active}" and its exercise list? (Saved history stays intact.)`,
+    confirmText: 'Delete',
+    onConfirm: () => {
+      delete data.days[data.active];
+      data.order = data.order.filter(n => n !== data.active);
+      data.active = data.order[0];
+      persist();
+      renderAll();
+    }
+  });
+});
+
+function buildSnapshot(dayName, date) {
+  const stretches = getStretchesForDay(dayName);
+  const checks = getChecksForDay(dayName);
+  return {
+    date,
+    day: dayName,
+    exercises: (data.days[dayName] || []).map(ex => ({
+      name: ex.name,
+      mode: modeFor(ex),
+      sets: ex.sets.map(s => ({ weight: s.weight || '', reps: s.reps || '', secs: s.secs || '', rir: s.rir || '' }))
+    })),
+    stretchAdherence: {
+      pre: { done: Math.min(stretches.pre.length, checks.pre.filter(Boolean).length + (checks.prePack || []).filter(Boolean).length), total: stretches.pre.length },
+      post: { done: Math.min(stretches.post.length, checks.post.filter(Boolean).length + (checks.postPack || []).filter(Boolean).length), total: stretches.post.length },
+    }
+  };
+}
+function storeSnapshot(snapshot) {
+  const existingIdx = history.findIndex(h => h.date === snapshot.date && h.day === snapshot.day);
+  if (existingIdx >= 0) {
+    if (history[existingIdx].feedback && !snapshot.feedback) snapshot.feedback = history[existingIdx].feedback;
+    history[existingIdx] = snapshot;
+  } else history.push(snapshot);
+  save(HISTORY_KEY, history);
+}
+
+document.getElementById('saveBtn').addEventListener('click', () => {
+  const today = todayStr();
+  // PRs are judged against everything saved before today.
+  const prs = [];
+  currentExercises().forEach(ex => {
+    if (modeFor(ex) !== 'weight') return;
+    const before = bestE1RM(ex.name, today);
+    const now = Math.max(0, ...ex.sets.map(s => e1rm(s.weight, s.reps)));
+    if (now && before && now > before + 0.01) prs.push(`${ex.name} ~${now.toFixed(1)} kg`);
+  });
+  const snapshot = buildSnapshot(data.active, today);
+  storeSnapshot(snapshot);
+  data.sessionDate = data.sessionDate || {};
+  data.sessionDate[data.active] = today;
+  persist();
+  showToast('Saved ✓');
+  renderExercises();
+  openSessionSummary(snapshot, prs);
+});
+
+function showToast(msg) {
+  const toast = document.getElementById('toast');
+  toast.textContent = msg;
+  toast.classList.add('show');
+  setTimeout(() => toast.classList.remove('show'), 1600);
+}
+
+document.getElementById('shareBtn').addEventListener('click', async () => {
+  const today = todayStr();
+  const todaysSession = history.find(h => h.date === today && h.day === data.active);
+  const sessionToShare = todaysSession || [...history].reverse().find(h => h.day === data.active);
+
+  let bodyLines = [`${data.active} — ${sessionToShare ? sessionToShare.date : 'no sessions logged yet'}`];
+  if (sessionToShare) {
+    sessionToShare.exercises.forEach(ex => {
+      const sets = formatSets(ex.sets, ex.mode || inferMode(ex.name));
+      if (sets) bodyLines.push(`${ex.name}: ${sets}`);
+    });
+  }
+  const shareText = bodyLines.join('\n');
+  const shareUrl = window.location.href;
+
+  try {
+    if (navigator.share) {
+      await navigator.share({ title: 'My Workout Tracker', text: shareText, url: shareUrl });
+      return;
+    }
+    throw new Error('Web Share API not available');
+  } catch (err) {
+    // Fallback: copy link + summary to clipboard so the user can paste it anywhere
+    const fallbackText = `${shareText}\n\n${shareUrl}`;
+    try {
+      await navigator.clipboard.writeText(fallbackText);
+      showToast('Copied — paste to share ✓');
+    } catch (clipErr) {
+      showInlineDialog({ message: fallbackText, confirmText: 'OK', onConfirm: () => {} });
+    }
+  }
+});
+
+function renderNutritionPanel() {
+  const panel = document.getElementById('nutritionPanel');
+  const stretches = getStretchesForDay(data.active);
+  const checks = getChecksForDay(data.active);
+
+  const lastNames = lastStretchNames(data.active);
+  const lastTag = name => lastNames.has(name) ? `<span style="font-size:0.68rem; color:var(--muted); background:var(--bg); border:1px solid var(--border); border-radius:10px; padding:1px 6px; margin-left:4px;">done last time</span>` : '';
+  const packBlock = (phase, items) => {
+    const key = phase + 'Pack';
+    if (!items || !items.length) return '';
+    const done = items.filter((_, i) => checks[key][i]).length;
+    return `<details style="margin-top:10px;" ${done ? 'open' : ''}>
+      <summary style="cursor:pointer; font-size:0.8rem; color:var(--accent); font-weight:600;">📦 Stretch pack · ${items.length} more to pick from${done ? ` (${done} picked)` : ''}</summary>
+      <div style="font-size:0.72rem; color:var(--muted); margin:6px 0 8px;">Swap any of these in for variety. Same muscles, different stretch. Skip the ones marked "done last time".</div>
+      ${items.map((item, idx) => {
+        const demoUrl = 'https://www.youtube.com/results?search_query=' + encodeURIComponent(item.name + ' correct form tutorial');
+        return `<div style="display:flex; gap:8px; align-items:flex-start; margin-bottom:10px; padding-bottom:10px; border-bottom:1px solid var(--border);">
+          <input type="checkbox" data-stretch-check="${key}:${idx}" ${checks[key][idx] ? 'checked' : ''} style="width:18px; height:18px; margin-top:2px; flex:none;">
+          <div style="flex:1; min-width:0;">
+            <strong style="font-size:0.85rem;">${escapeHtml(item.name)}</strong>${lastTag(item.name)}<br>
+            <span style="color:var(--muted); font-size:0.78rem;">${escapeHtml(item.detail)}</span><br>
+            ${item.cue ? `<span style="color:var(--accent); font-size:0.75rem; font-style:italic;">💡 ${escapeHtml(item.cue)}</span><br>` : ''}
+            <a href="${demoUrl}" target="_blank" rel="noopener" style="font-size:0.72rem; color:var(--accent); text-decoration:underline;">▶ Watch demo</a>
+          </div>
+        </div>`;
+      }).join('')}
+    </details>`;
+  };
+  const stretchColumn = (phase, title, items) => {
+    const doneCount = items.filter((_, i) => checks[phase][i]).length;
+    const rows = items.map((item, idx) => {
+      const demoUrl = 'https://www.youtube.com/results?search_query=' + encodeURIComponent(item.name + ' correct form tutorial');
+      return `
+      <div style="display:flex; gap:8px; align-items:flex-start; margin-bottom:10px; padding-bottom:10px; border-bottom:1px solid var(--border);">
+        <input type="checkbox" data-stretch-check="${phase}:${idx}" ${checks[phase][idx] ? 'checked' : ''} style="width:18px; height:18px; margin-top:2px; flex:none;">
+        <div style="flex:1; min-width:0;">
+          <strong style="font-size:0.85rem;">${escapeHtml(item.name)}</strong>${lastTag(item.name)}<br>
+          <span style="color:var(--muted); font-size:0.78rem;">${escapeHtml(item.detail)}</span><br>
+          ${item.cue ? `<span style="color:var(--accent); font-size:0.75rem; font-style:italic;">💡 ${escapeHtml(item.cue)}</span><br>` : ''}
+          <a href="${demoUrl}" target="_blank" rel="noopener" style="font-size:0.72rem; color:var(--accent); text-decoration:underline;">▶ Watch demo</a>
+        </div>
+        <button class="del-btn" data-edit-stretch="${phase}:${idx}" style="font-size:0.9rem;">✏️</button>
+      </div>`;
+    }).join('');
+    return `
+      <div class="card" style="padding:12px;">
+        <div style="font-weight:600; margin-bottom:2px; font-size:0.92rem;">${title}</div>
+        <div style="font-size:0.72rem; color:var(--muted); margin-bottom:10px;">${doneCount}/${items.length} done</div>
+        ${rows}
+        <button class="add-set" data-add-stretch="${phase}" style="margin-top:2px;">+ add stretch</button>
+        ${packBlock(phase, stretches[phase + 'Pack'])}
+      </div>`;
+  };
+
+  const nutritionSection = `
+    <div class="card">
+      <div style="font-weight:600; margin-bottom:10px;">🥗 Post-workout nutrition</div>
+      ${NUTRITION_CONTENT.nutrition.map(([name, detail]) => `<div style="margin-bottom:8px;"><strong>${escapeHtml(name)}:</strong> <span style="color:var(--muted);">${escapeHtml(detail)}</span></div>`).join('')}
+    </div>`;
+
+  panel.innerHTML = `
+    <div style="font-size:0.85rem; color:var(--muted); margin-bottom:10px;">Stretches tailored to ${escapeHtml(data.active)} — tap ✏️ to edit, tick off as you go</div>
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:14px;">
+      ${stretchColumn('pre', '🔥 Pre-workout (dynamic)', stretches.pre)}
+      ${stretchColumn('post', '🧘 Post-workout (static)', stretches.post)}
+    </div>
+    ${nutritionSection}
+    <div class="empty-note" style="padding:4px 2px;">General wellness guidance, not medical or dietary advice — adjust to your own needs.</div>`;
+}
+
+function openStretchEditor(phase, idx) {
+  const stretches = getStretchesForDay(data.active);
+  const isNew = idx === null;
+  const item = isNew ? { name: '', detail: '', cue: '' } : stretches[phase][idx];
+  showInlineFormDialog({
+    title: isNew ? 'Add stretch' : 'Edit stretch',
+    confirmText: isNew ? 'Add' : 'Save',
+    fields: [
+      { label: 'Name', placeholder: 'e.g. "Standing quad stretch"', value: item.name },
+      { label: 'Dosage', placeholder: 'e.g. "30 sec each leg"', value: item.detail },
+      { label: 'Form / safety cue (optional)', placeholder: 'e.g. "Keep knees together"', value: item.cue },
+    ],
+    onDelete: isNew ? null : () => {
+      stretches[phase].splice(idx, 1);
+      getChecksForDay(data.active)[phase].splice(idx, 1);
+      persistStretches(); persistChecks();
+      renderNutritionPanel();
+    },
+    onConfirm: ([name, detail, cue]) => {
+      if (!name) return;
+      const newItem = { name, detail, cue };
+      if (isNew) stretches[phase].push(newItem);
+      else stretches[phase][idx] = newItem;
+      persistStretches();
+      renderNutritionPanel();
+    }
+  });
+}
+
+document.body.addEventListener('click', (e) => {
+  const t = e.target;
+  if (t.dataset.stretchCheck !== undefined) {
+    const [phase, idx] = t.dataset.stretchCheck.split(':');
+    const checks = getChecksForDay(data.active);
+    checks[phase][idx] = t.checked;
+    persistChecks();
+    logStretchNames(data.active);
+    renderNutritionPanel();
+  }
+  if (t.dataset.editStretch !== undefined) {
+    const [phase, idx] = t.dataset.editStretch.split(':');
+    openStretchEditor(phase, +idx);
+  }
+  if (t.dataset.addStretch !== undefined) {
+    openStretchEditor(t.dataset.addStretch, null);
+  }
+});
+
+document.body.addEventListener('click', (e) => {
+  if (e.target && e.target.id === 'timerToggleBtn') {
+    const panel = document.getElementById('timerPanel');
+    if (panel.style.display === 'none') {
+      panel.style.display = 'block';
+      renderTimerPanel();
+      setTimeout(() => { try { panel.scrollIntoView({ behavior: 'smooth', block: 'start' }); } catch (err) {} }, 50);
+    } else {
+      panel.style.display = 'none';
+    }
+  }
+  if (e.target && e.target.id === 'timerStartPause') {
+    if (timerState.running) {
+      clearInterval(timerState.intervalId);
+      timerState.running = false;
+    } else {
+      timerState.running = true;
+      timerState.intervalId = setInterval(tickTimer, 1000);
+    }
+    renderTimerPanel();
+  }
+  if (e.target && e.target.id === 'timerSkip') {
+    if (timerState.phaseIdx < PHASES.length - 1) {
+      timerState.phaseIdx++;
+      timerState.remaining = PHASES[timerState.phaseIdx].seconds;
+      renderTimerPanel();
+    }
+  }
+  if (e.target && e.target.id === 'timerReset') {
+    clearInterval(timerState.intervalId);
+    timerState.running = false;
+    timerState.phaseIdx = 0;
+    timerState.remaining = PHASES[0].seconds;
+    renderTimerPanel();
+  }
+});
+
+function tickTimer() {
+  if (timerState.remaining > 0) {
+    timerState.remaining--;
+  } else if (timerState.phaseIdx < PHASES.length - 1) {
+    timerState.phaseIdx++;
+    timerState.remaining = PHASES[timerState.phaseIdx].seconds;
+    showToast(PHASES[timerState.phaseIdx].emoji + ' ' + PHASES[timerState.phaseIdx].name + ' time!');
+  } else {
+    clearInterval(timerState.intervalId);
+    timerState.running = false;
+    showToast('🎉 Session complete!');
+  }
+  renderTimerPanel();
+}
+
+function renderTimerPanel() {
+  const panel = document.getElementById('timerPanel');
+  const phase = PHASES[timerState.phaseIdx];
+  const mm = Math.floor(timerState.remaining / 60).toString().padStart(2, '0');
+  const ss = (timerState.remaining % 60).toString().padStart(2, '0');
+  const totalSeconds = PHASES.reduce((a, p) => a + p.seconds, 0);
+  const elapsedInPhase = phase.seconds - timerState.remaining;
+  const elapsedTotal = PHASES.slice(0, timerState.phaseIdx).reduce((a, p) => a + p.seconds, 0) + elapsedInPhase;
+  const pct = Math.min(100, Math.round((elapsedTotal / totalSeconds) * 100));
+  panel.innerHTML = `
+    <div class="card" style="text-align:center;">
+      <div style="font-size:0.85rem; color:var(--muted); margin-bottom:4px;">${phase.emoji} ${escapeHtml(phase.name)} — phase ${timerState.phaseIdx + 1} of ${PHASES.length}</div>
+      <div style="font-size:2.2rem; font-weight:700; margin-bottom:12px;">${mm}:${ss}</div>
+      <div style="height:8px; background:var(--bg); border-radius:4px; overflow:hidden; margin-bottom:14px;">
+        <div style="height:100%; width:${pct}%; background:var(--accent); transition:width 0.3s;"></div>
+      </div>
+      <div style="display:flex; gap:8px; justify-content:center;">
+        <button class="secondary" id="timerStartPause" style="flex:1;">${timerState.running ? '⏸ Pause' : '▶ Start'}</button>
+        <button class="secondary" id="timerSkip" style="flex:1;">⏭ Skip</button>
+        <button class="secondary" id="timerReset" style="flex:1;">↺ Reset</button>
+      </div>
+    </div>`;
+}
+
+function renderBodyweightPanel() {
+  const panel = document.getElementById('bodyweightPanel');
+  const sorted = [...bodyweightLog].sort((a, b) => a.date.localeCompare(b.date));
+  const recent = sorted.slice(-20);
+  const today = todayStr();
+  const todayEntry = bodyweightLog.find(e => e.date === today);
+
+  let chartSvg = '';
+  if (recent.length >= 1) {
+    const targetTime = new Date(bwTarget.date).getTime();
+    const times = recent.map(e => new Date(e.date).getTime()).concat([new Date(today).getTime(), targetTime]);
+    const xMin = Math.min(...times), xMax = Math.max(...times);
+
+    const weights = recent.map(e => e.weight).concat([bwTarget.weight]);
+    const minW = Math.min(...weights), maxW = Math.max(...weights);
+    const pad = Math.max(0.5, (maxW - minW) * 0.15);
+    const lo = minW - pad, hi = maxW + pad;
+
+    const W = 320, H = 130, L = 30, R = 10, T = 10, B = 20;
+    const plotW = W - L - R, plotH = H - T - B;
+    const xScale = t => L + (xMax === xMin ? plotW / 2 : ((t - xMin) / (xMax - xMin)) * plotW);
+    const yScale = w => T + plotH - ((w - lo) / (hi - lo)) * plotH;
+
+    const pts = recent.map(e => ({ x: xScale(new Date(e.date).getTime()), y: yScale(e.weight) }));
+    const path = pts.map((p, i) => (i === 0 ? 'M' : 'L') + p.x.toFixed(1) + ',' + p.y.toFixed(1)).join(' ');
+    const dots = pts.map(p => `<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="3" fill="var(--accent)" />`).join('');
+
+    const startPt = { x: xScale(new Date(recent[0].date).getTime()), y: yScale(recent[0].weight) };
+    const targetPt = { x: xScale(targetTime), y: yScale(bwTarget.weight) };
+    const targetLine = `<line x1="${startPt.x.toFixed(1)}" y1="${startPt.y.toFixed(1)}" x2="${targetPt.x.toFixed(1)}" y2="${targetPt.y.toFixed(1)}" stroke="var(--muted)" stroke-width="1.5" stroke-dasharray="4,3"/>
+      <circle cx="${targetPt.x.toFixed(1)}" cy="${targetPt.y.toFixed(1)}" r="4" fill="none" stroke="var(--muted)" stroke-width="1.5"/>`;
+
+    chartSvg = `
+      <svg viewBox="0 0 ${W} ${H}" style="width:100%; height:auto; display:block;">
+        <text x="2" y="${T + 4}" font-size="9" fill="var(--muted)">${hi.toFixed(1)}</text>
+        <text x="2" y="${T + plotH}" font-size="9" fill="var(--muted)">${lo.toFixed(1)}</text>
+        <line x1="${L}" y1="${T}" x2="${L}" y2="${T + plotH}" stroke="var(--border)" stroke-width="1"/>
+        <line x1="${L}" y1="${T + plotH}" x2="${L + plotW}" y2="${T + plotH}" stroke="var(--border)" stroke-width="1"/>
+        ${targetLine}
+        <path d="${path}" fill="none" stroke="var(--accent)" stroke-width="2"/>
+        ${dots}
+      </svg>
+      <div style="display:flex; justify-content:space-between; font-size:0.68rem; color:var(--muted); margin-top:2px;">
+        <span>${recent[0].date}</span><span>🎯 ${bwTarget.date}</span>
+      </div>`;
+  }
+
+  const entriesHtml = [...bodyweightLog].sort((a, b) => b.date.localeCompare(a.date)).slice(0, 10).map((e, i) => `
+    <div style="display:flex; justify-content:space-between; align-items:center; padding:6px 0; border-bottom:1px solid var(--border);">
+      <span style="font-size:0.82rem;">${e.date}</span>
+      <span style="font-size:0.82rem; font-weight:600;">${e.weight} kg</span>
+      <button class="del-btn" data-bw-del="${e.date}" style="font-size:0.85rem;">✕</button>
+    </div>`).join('');
+
+  panel.innerHTML = `
+    <div class="card">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+        <div style="font-weight:600;">⚖️ Bodyweight</div>
+        <button class="del-btn" id="bwEditTarget" style="font-size:0.72rem;">🎯 ${bwTarget.weight}kg by ${bwTarget.date} ✏️</button>
+      </div>
+      <div style="display:flex; gap:8px; margin-bottom:14px;">
+        <input id="bwInput" type="number" step="0.1" placeholder="kg" value="${todayEntry ? todayEntry.weight : ''}" style="flex:1;">
+        <button class="primary" id="bwSaveBtn" style="flex:none; padding:9px 16px;">${todayEntry ? 'Update today' : 'Log today'}</button>
+      </div>
+      ${chartSvg || `<div class="empty-note">Log an entry to see your trend vs target.</div>`}
+    </div>
+    ${bodyweightLog.length ? `<div class="card">${entriesHtml}</div>` : ''}
+    <div class="empty-note" style="padding:4px 2px;">Weight is noisy day to day (water, food, glycogen) — the trend over weeks is what matters, not any single reading.</div>`;
+}
+
+document.body.addEventListener('click', (e) => {
+  if (e.target && e.target.id === 'bwToggleBtn') {
+    const panel = document.getElementById('bodyweightPanel');
+    if (panel.style.display === 'none') {
+      panel.style.display = 'block';
+      renderBodyweightPanel();
+      setTimeout(() => { try { panel.scrollIntoView({ behavior: 'smooth', block: 'start' }); } catch (err) {} }, 50);
+    } else {
+      panel.style.display = 'none';
+    }
+  }
+  if (e.target && e.target.id === 'bwEditTarget') {
+    showInlineFormDialog({
+      title: 'Edit weight target',
+      confirmText: 'Save',
+      fields: [
+        { label: 'Target weight (kg)', placeholder: 'e.g. 78', value: bwTarget.weight },
+        { label: 'Target date (YYYY-MM-DD)', placeholder: '2026-12-31', value: bwTarget.date },
+      ],
+      onConfirm: ([weight, date]) => {
+        const w = parseFloat(weight);
+        if (!w || !/^\d{4}-\d{2}-\d{2}$/.test(date)) return;
+        bwTarget = { weight: w, date };
+        save(BW_TARGET_KEY, bwTarget);
+        renderBodyweightPanel();
+      }
+    });
+  }
+  if (e.target && e.target.id === 'bwSaveBtn') {
+    const input = document.getElementById('bwInput');
+    const val = parseFloat(input.value);
+    if (!val || val <= 0) return;
+    const today = todayStr();
+    const idx = bodyweightLog.findIndex(en => en.date === today);
+    if (idx >= 0) bodyweightLog[idx].weight = val;
+    else bodyweightLog.push({ date: today, weight: val });
+    save(BW_KEY, bodyweightLog);
+    showToast('Logged ✓');
+    renderBodyweightPanel();
+  }
+  if (e.target && e.target.dataset && e.target.dataset.bwDel !== undefined) {
+    bodyweightLog = bodyweightLog.filter(en => en.date !== e.target.dataset.bwDel);
+    save(BW_KEY, bodyweightLog);
+    renderBodyweightPanel();
+  }
+});
+
+document.body.addEventListener('click', (e) => {
+  if (e.target && e.target.id === 'nutritionBtn') {
+    const panel = document.getElementById('nutritionPanel');
+    if (panel.style.display === 'none') {
+      panel.style.display = 'block';
+      renderNutritionPanel();
+      setTimeout(() => { try { panel.scrollIntoView({ behavior: 'smooth', block: 'start' }); } catch (err) {} }, 50);
+    } else {
+      panel.style.display = 'none';
+    }
+  }
+});
+
+document.body.addEventListener('click', (e) => {
+  if (e.target && e.target.id === 'historyBtn') {
+    debugLog('History tapped — ' + history.length + ' saved session(s) total, ' + history.filter(h => h.day === data.active).length + ' for this day');
+    toggleHistoryPanel();
+  }
+});
+function toggleHistoryPanel() {
+  const panel = document.getElementById('historyPanel');
+  if (panel.style.display === 'none') {
+    panel.style.display = 'block';
+    renderHistory();
+    setTimeout(() => { try { panel.scrollIntoView({ behavior: 'smooth', block: 'start' }); } catch (e) {} }, 50);
+  } else {
+    panel.style.display = 'none';
+  }
+}
+
+// Estimated 1-rep max per session for each loaded lift on this day.
+function progressCard(sessions) {
+  const sorted = [...sessions].sort((a, b) => a.date.localeCompare(b.date));
+  const names = (data.days[data.active] || []).filter(ex => modeFor(ex) === 'weight').map(ex => ex.name);
+  const rows = names.map(name => {
+    const pts = sorted.map(h => {
+      const e = (h.exercises || []).find(x => x.name === name);
+      return e ? Math.max(0, ...e.sets.map(s => e1rm(s.weight, s.reps))) : 0;
+    }).filter(v => v > 0);
+    if (pts.length < 2) return '';
+    const W = 120, H = 28, lo = Math.min(...pts), hi = Math.max(...pts), span = (hi - lo) || 1;
+    const xy = pts.map((v, i) => [(i / (pts.length - 1)) * (W - 6) + 3, H - 4 - ((v - lo) / span) * (H - 8)]);
+    const d = xy.map((p, i) => (i ? 'L' : 'M') + p[0].toFixed(1) + ',' + p[1].toFixed(1)).join(' ');
+    const end = xy[xy.length - 1];
+    const delta = pts[pts.length - 1] - pts[0];
+    return `<div class="spark"><div style="min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${escapeHtml(name)}</div>
+      <svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" aria-hidden="true"><path d="${d}" fill="none" stroke="var(--accent)" stroke-width="2"/><circle cx="${end[0]}" cy="${end[1]}" r="3" fill="var(--accent)"/></svg>
+      <div class="num" style="text-align:right; color:${delta >= 0 ? 'var(--good)' : 'var(--bad)'};">${delta >= 0 ? '+' : ''}${delta.toFixed(1)}</div></div>`;
+  }).join('');
+  if (!rows) return '';
+  return `<div class="card"><div style="font-weight:600; margin-bottom:2px;">📈 Strength trend</div><div style="font-size:0.72rem; color:var(--muted); margin-bottom:10px;">Estimated 1-rep max per session, kg change since first log</div>${rows}</div>`;
+}
+
+function renderHistory() {
+  const panel = document.getElementById('historyPanel');
+  const relevant = history.filter(h => h.day === data.active);
+  if (!relevant.length) {
+    panel.innerHTML = `<div class="card empty-note">No saved sessions yet for "${escapeHtml(data.active)}". Log today's workout and hit Save.</div>`;
+    return;
+  }
+  const sorted = [...relevant].sort((a, b) => b.date.localeCompare(a.date));
+  panel.innerHTML = sorted.map(session => {
+    const rows = session.exercises.map(ex => {
+      const sets = formatSets(ex.sets, ex.mode || inferMode(ex.name));
+      return sets ? `<div><strong>${escapeHtml(ex.name)}:</strong> ${sets}</div>` : '';
+    }).filter(Boolean).join('');
+    const adherence = session.stretchAdherence
+      ? `<div class="history" style="margin-top:8px;">🔥 Warm-up: ${session.stretchAdherence.pre.done}/${session.stretchAdherence.pre.total} &nbsp; 🧘 Stretch: ${session.stretchAdherence.post.done}/${session.stretchAdherence.post.total}</div>`
+      : '';
+    const fb = session.feedback && (session.feedback.pump || session.feedback.soreness || session.feedback.joints)
+      ? `<div class="history" style="margin-top:6px;">Pump: ${session.feedback.pump || '–'} · Soreness: ${session.feedback.soreness || '–'} · Joints: ${session.feedback.joints || '–'}</div>` : '';
+    const tag = session.autoArchived ? ` <span style="font-size:0.7rem; color:var(--muted); font-weight:400;">(kept automatically${session.dateGuessed ? ', date approximate' : ''})</span>` : '';
+    return `<div class="card"><div style="font-weight:600; margin-bottom:6px;">${session.date}${tag}</div>${rows || '<span class="empty-note">No data logged</span>'}${adherence}${fb}</div>`;
+  }).join('');
+  panel.innerHTML = progressCard(relevant) + panel.innerHTML;
+}
+
+/* ===================== v2: sessions, rest, PRs, volume, backup ===================== */
+
+function fmtClock(s) { s = Math.max(0, Math.round(s)); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); }
+
+// Rest by rep range: heavy low-rep work needs longer to recover than pump work.
+function restFor(ex) {
+  if (ex.rest) return ex.rest;
+  const mode = modeFor(ex);
+  if (mode !== 'weight') return 60;
+  const t = ex.target || '';
+  const range = t.match(/(\d+)\s*-\s*(\d+)\s*reps?/i);
+  const fixed = t.match(/x\s*(\d+)\s*reps?/i);
+  const top = range ? +range[2] : fixed ? +fixed[1] : 10;
+  if (top <= 6) return 180;
+  if (top <= 10) return 120;
+  return 90;
+}
+
+function isBarbell(name) {
+  const n = (name || '').toLowerCase();
+  if (/dumbbell|goblet|split|hack|leg press|single-leg|landmine|machine|cable|bodyweight/.test(n)) return false;
+  return /barbell|squat|bench|deadlift|overhead press|good morning/.test(n);
+}
+
+// Epley estimate; above ~12 reps it overestimates, so those sets are ignored.
+function e1rm(w, r) {
+  w = parseFloat(w); r = parseInt(r, 10);
+  if (!w || !r || r < 1 || r > 12) return 0;
+  return r === 1 ? w : w * (1 + r / 30);
+}
+function bestE1RM(exName, beforeDate) {
+  let best = 0;
+  history.forEach(h => {
+    if (beforeDate && h.date >= beforeDate) return;
+    (h.exercises || []).forEach(e => {
+      if (e.name !== exName || (e.mode && e.mode !== 'weight')) return;
+      (e.sets || []).forEach(s => { best = Math.max(best, e1rm(s.weight, s.reps)); });
+    });
+  });
+  return best;
+}
+
+function setHasValue(s) { return !!(s && (s.weight || s.reps || s.secs)); }
+function getLastSetsFor(dayName, exName) {
+  const sorted = history.filter(h => h.day === dayName).sort((a, b) => b.date.localeCompare(a.date));
+  for (const h of sorted) {
+    const e = (h.exercises || []).find(x => x.name === exName);
+    if (e && e.sets.some(setHasValue)) return e.sets.filter(setHasValue);
+  }
+  return null;
+}
+
+function markSessionActive() {
+  const today = todayStr();
+  data.sessionDate = data.sessionDate || {};
+  data.sessionDate[data.active] = today;
+  if (!data.sessionStart || data.sessionStart.day !== data.active || data.sessionStart.date !== today) {
+    data.sessionStart = { day: data.active, date: today, t: Date.now() };
+  }
+}
+
+/* ---------- New-session rollover ---------- */
+// When a day is opened on a new date, last session's numbers are archived to
+// History (if they weren't saved) and the boxes are emptied. Last time's
+// numbers then show faintly as placeholders. One tap on Undo puts them back.
+let staleUnknown = {}; // day -> true when old values exist but their date is unknown
+
+function dayHasValues(dayName) {
+  return (data.days[dayName] || []).some(ex => ex.sets.some(s => setHasValue(s) || s.done));
+}
+function sameAsSnapshot(dayName, snap) {
+  if (!snap) return false;
+  return (data.days[dayName] || []).every(ex => {
+    const e = snap.exercises.find(x => x.name === ex.name);
+    const cur = ex.sets.filter(setHasValue);
+    if (!e) return cur.length === 0;
+    const old = e.sets.filter(setHasValue);
+    if (cur.length !== old.length) return false;
+    return cur.every((s, i) => String(s.weight || '') === String(old[i].weight || '') &&
+      String(s.reps || '') === String(old[i].reps || '') && String(s.secs || '') === String(old[i].secs || ''));
+  });
+}
+function clearDaySets(dayName, archivedDate) {
+  const today = todayStr();
+  data.lastCleared = {
+    day: dayName, date: today, archivedDate: archivedDate || null,
+    sets: (data.days[dayName] || []).map(ex => ({ name: ex.name, sets: JSON.parse(JSON.stringify(ex.sets)) })),
+    checks: JSON.parse(JSON.stringify(getChecksForDay(dayName))),
+  };
+  (data.days[dayName] || []).forEach(ex => { ex.sets = ex.sets.map(() => ({})); });
+  stretchChecks[dayName] = { pre: [], post: [] };
+  persistChecks();
+  if (data.sessionDate) delete data.sessionDate[dayName];
+  delete staleUnknown[dayName];
+  persist();
+}
+function rolloverIfStale(dayName) {
+  if (!dayHasValues(dayName)) return;
+  const today = todayStr();
+  const draft = data.sessionDate && data.sessionDate[dayName];
+  if (draft === today) return;
+  if (draft) {
+    const saved = history.find(h => h.date === draft && h.day === dayName);
+    if (!saved) {
+      const snap = buildSnapshot(dayName, draft);
+      snap.autoArchived = true;
+      storeSnapshot(snap);
+    }
+    clearDaySets(dayName, draft);
+    return;
+  }
+  // Numbers typed before this version have no date. If they match the last
+  // saved session they're safe to clear; otherwise ask first.
+  const latest = history.filter(h => h.day === dayName).sort((a, b) => b.date.localeCompare(a.date))[0];
+  if (latest && latest.date < today && sameAsSnapshot(dayName, latest)) { clearDaySets(dayName, latest.date); return; }
+  if (latest && latest.date === today) { data.sessionDate = data.sessionDate || {}; data.sessionDate[dayName] = today; persist(); return; }
+  staleUnknown[dayName] = true;
+}
+function renderRolloverBanner() {
+  const el = document.getElementById('rolloverBanner');
+  const today = todayStr();
+  if (staleUnknown[data.active]) {
+    el.innerHTML = `<div class="banner info"><div>These boxes still hold numbers from an earlier session that wasn't saved. Clear them for today? They'll be kept in History.</div><button class="primary" id="clearStaleBtn" style="padding:9px 12px;">Clear</button></div>`;
+    return;
+  }
+  const lc = data.lastCleared;
+  if (lc && lc.day === data.active && lc.date === today && !lc.dismissed) {
+    el.innerHTML = `<div class="banner calm"><div>🆕 Fresh session. ${lc.archivedDate ? `Your ${lc.archivedDate} numbers are in History and` : 'Last numbers are'} shown faintly in each box as a guide.</div>
+      <div style="display:flex; gap:6px;"><button class="secondary" id="undoClearBtn" style="padding:8px 10px; min-height:0;">Undo</button><button class="del-btn" id="dismissClearBtn" aria-label="Dismiss">✕</button></div></div>`;
+    return;
+  }
+  el.innerHTML = '';
+}
+function undoClear() {
+  const lc = data.lastCleared;
+  if (!lc || lc.day !== data.active) return;
+  (data.days[lc.day] || []).forEach(ex => {
+    const b = lc.sets.find(x => x.name === ex.name);
+    if (b) ex.sets = b.sets;
+  });
+  stretchChecks[lc.day] = lc.checks || { pre: [], post: [] };
+  persistChecks();
+  data.sessionDate = data.sessionDate || {};
+  data.sessionDate[lc.day] = todayStr(); // keep them for today now that they're back
+  data.lastCleared = null;
+  persist();
+  renderAll();
+  showToast('Numbers restored');
+}
+
+document.body.addEventListener('click', (e) => {
+  const id = e.target && e.target.id;
+  if (id === 'clearStaleBtn') {
+    const today = todayStr();
+    const latest = history.filter(h => h.day === data.active && h.date < today).sort((a, b) => b.date.localeCompare(a.date))[0];
+    let date = addDays(today, -1);
+    // Never overwrite a saved session: step back to a free date.
+    while (history.some(h => h.day === data.active && h.date === date)) date = addDays(date, -1);
+    if (!(latest && sameAsSnapshot(data.active, latest))) {
+      const snap = buildSnapshot(data.active, date);
+      snap.autoArchived = true; snap.dateGuessed = true;
+      storeSnapshot(snap);
+    }
+    clearDaySets(data.active, date);
+    renderAll();
+  }
+  if (id === 'undoClearBtn') undoClear();
+  if (id === 'dismissClearBtn') { data.lastCleared.dismissed = true; persist(); renderRolloverBanner(); }
+  if (id === 'freshStartBtn') {
+    if (!dayHasValues(data.active)) { showToast('Already clear — ready to log'); return; }
+    showInlineDialog({
+      message: `Clear all sets on "${data.active}"? Today's numbers are saved to History first, and you can undo.`,
+      confirmText: 'Save & clear',
+      onConfirm: () => {
+        const today = todayStr();
+        const saved = history.find(h => h.date === today && h.day === data.active);
+        if (!sameAsSnapshot(data.active, saved)) storeSnapshot(buildSnapshot(data.active, today));
+        clearDaySets(data.active, today);
+        renderAll();
+      }
+    });
+  }
+});
+
+/* ---------- Training block (mesocycle) ---------- */
+// Effort rises week by week (reps in reserve 3 → 0-1), then a lighter
+// deload week, then the block repeats.
+function mondayOf(dateStr) {
+  const [y, m, d] = dateStr.split('-').map(Number);
+  const dt = new Date(y, m - 1, d);
+  const shift = (dt.getDay() + 6) % 7;
+  return todayStr(new Date(y, m - 1, d - shift));
+}
+if (!data.meso) { data.meso = { start: mondayOf(todayStr()), length: 6 }; persist(); }
+function mesoInfo() {
+  const len = Math.max(3, +data.meso.length || 6);
+  const elapsed = Math.max(0, daysBetween(data.meso.start, todayStr()));
+  const week = (Math.floor(elapsed / 7) % len) + 1;
+  const deload = week === len;
+  const acc = len - 1;
+  let rirNum = deload ? 3 : Math.round(3 - 3 * (week - 1) / Math.max(1, acc - 1));
+  const rir = deload ? '3-4' : (rirNum <= 0 ? '0-1' : String(rirNum));
+  return { week, len, deload, rir };
+}
+function renderMesoBanner() {
+  const el = document.getElementById('mesoBanner');
+  const m = mesoInfo();
+  el.innerHTML = (typeof renderTidyNote === 'function' ? renderTidyNote() : '') + (m.deload
+    ? `<div class="banner info"><div><strong>Deload · week ${m.week} of ${m.len}</strong><br>Do about half your usual sets, ~10% lighter, stopping 3-4 reps short. A new block starts next week.</div><button class="del-btn" id="mesoEditBtn" aria-label="Edit training block">✏️</button></div>`
+    : `<div class="banner calm"><div><strong>Week ${m.week} of ${m.len}</strong> · stop each working set about <strong>${m.rir}</strong> rep${m.rir === '1' ? '' : 's'} short of failure (RIR). Deload in week ${m.len}.</div><button class="del-btn" id="mesoEditBtn" aria-label="Edit training block">✏️</button></div>`);
+}
+document.body.addEventListener('click', (e) => {
+  if (e.target && e.target.id === 'mesoEditBtn') {
+    showInlineFormDialog({
+      title: 'Training block',
+      confirmText: 'Save',
+      fields: [
+        { label: 'Block started (YYYY-MM-DD)', placeholder: todayStr(), value: data.meso.start },
+        { label: 'Weeks per block, including the deload week', placeholder: '6', value: String(data.meso.length) },
+      ],
+      onConfirm: ([start, len]) => {
+        if (/^\d{4}-\d{2}-\d{2}$/.test(start)) data.meso.start = start;
+        const n = parseInt(len, 10); if (n >= 3 && n <= 12) data.meso.length = n;
+        persist(); renderMesoBanner(); renderExercises();
+      }
+    });
+  }
+});
+
+/* ---------- Rest timer ---------- */
+let rest = { end: 0, label: '', id: null };
+let audioCtx = null;
+function beep() {
+  try {
+    audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+    [0, 0.25].forEach(offset => {
+      const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+      o.frequency.value = 880; g.gain.value = 0.15;
+      o.connect(g); g.connect(audioCtx.destination);
+      o.start(audioCtx.currentTime + offset); o.stop(audioCtx.currentTime + offset + 0.15);
+    });
+  } catch (err) {}
+}
+function startRest(seconds, label) {
+  try { audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)(); } catch (err) {}
+  rest.end = Date.now() + seconds * 1000;
+  rest.label = label;
+  clearInterval(rest.id);
+  rest.id = setInterval(tickRest, 250);
+  document.getElementById('restBar').hidden = false;
+  document.body.classList.add('resting');
+  tickRest();
+}
+function stopRest() {
+  clearInterval(rest.id);
+  document.getElementById('restBar').hidden = true;
+  document.body.classList.remove('resting');
+}
+function tickRest() {
+  const left = (rest.end - Date.now()) / 1000;
+  document.getElementById('restTime').textContent = fmtClock(Math.ceil(left));
+  document.getElementById('restLabel').textContent = 'Rest · up next: ' + rest.label;
+  if (left <= 0) {
+    stopRest();
+    beep();
+    try { navigator.vibrate && navigator.vibrate([200, 100, 200]); } catch (err) {}
+    showToast('Rest done · ' + rest.label);
+  }
+}
+document.getElementById('restPlus').addEventListener('click', () => { rest.end += 15000; tickRest(); });
+document.getElementById('restMinus').addEventListener('click', () => { rest.end -= 15000; tickRest(); });
+document.getElementById('restSkip').addEventListener('click', stopRest);
+
+let wakeLock = null;
+async function keepAwake() {
+  try { if (!wakeLock && navigator.wakeLock) { wakeLock = await navigator.wakeLock.request('screen'); wakeLock.addEventListener('release', () => { wakeLock = null; }); } } catch (err) {}
+}
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible' && data.sessionStart && data.sessionStart.date === todayStr()) keepAwake();
+});
+
+/* ---------- Plate calculator & warm-up ramp ---------- */
+const PLATES = [25, 20, 15, 10, 5, 2.5, 1.25];
+function platesFor(total, bar) {
+  let side = (total - bar) / 2;
+  if (side < 0) return null;
+  const out = [];
+  PLATES.forEach(p => { while (side >= p - 1e-9) { out.push(p); side -= p; } });
+  return { plates: out, leftover: Math.round(side * 2 * 100) / 100 };
+}
+function roundTo(x, step) { return Math.round(x / step) * step; }
+function openPlateDialog(ex) {
+  const prev = getLastSetsFor(data.active, ex.name);
+  const firstTyped = ex.sets.find(s => s.weight);
+  const start = (firstTyped && firstTyped.weight) || (prev && prev[0] && prev[0].weight) || '60';
+  const overlay = document.createElement('div');
+  overlay.style.cssText = 'position:fixed; inset:0; background:rgba(0,0,0,0.5); display:flex; align-items:center; justify-content:center; z-index:1000; padding:20px;';
+  overlay.innerHTML = `<div style="background:var(--card); border-radius:14px; padding:20px; max-width:380px; width:100%; border:1px solid var(--border); max-height:85vh; overflow-y:auto;">
+    <div style="font-weight:600; margin-bottom:12px;">🧮 ${escapeHtml(ex.name)}</div>
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:12px;">
+      <label style="font-size:0.78rem; color:var(--muted);">Working weight (kg)<input id="plateTarget" type="number" inputmode="decimal" value="${escapeHtml(String(start))}"></label>
+      <label style="font-size:0.78rem; color:var(--muted);">Bar (kg)<input id="plateBar" type="number" inputmode="decimal" value="20"></label>
+    </div>
+    <div id="plateOut"></div>
+    <div style="display:flex; justify-content:flex-end; margin-top:12px;"><button class="primary" id="plateClose" style="flex:none; padding:9px 16px;">Done</button></div>
+  </div>`;
+  document.body.appendChild(overlay);
+  const draw = () => {
+    const target = parseFloat(overlay.querySelector('#plateTarget').value) || 0;
+    const bar = parseFloat(overlay.querySelector('#plateBar').value) || 20;
+    const line = (w) => {
+      const r = platesFor(w, bar);
+      if (!r) return 'bar only';
+      return (r.plates.length ? r.plates.join(' + ') + ' per side' : 'empty bar') + (r.leftover ? ` (${r.leftover} kg short)` : '');
+    };
+    const ramp = [[0, 10], [0.4, 8], [0.6, 5], [0.8, 3]].map(([pct, reps]) => {
+      const w = pct === 0 ? bar : Math.max(bar, roundTo(target * pct, 2.5));
+      return `<div class="num" style="display:flex; justify-content:space-between; gap:8px; font-size:0.82rem; padding:6px 0; border-bottom:1px solid var(--border);"><span>${w} kg × ${reps}</span><span style="color:var(--muted); text-align:right;">${line(w)}</span></div>`;
+    }).join('');
+    overlay.querySelector('#plateOut').innerHTML = `
+      <div style="background:var(--accent-soft); border-radius:10px; padding:10px; margin-bottom:12px;">
+        <div style="font-size:0.75rem; color:var(--muted);">Load each side for ${target} kg</div>
+        <div class="num" style="font-weight:700; font-size:1.05rem;">${line(target)}</div>
+      </div>
+      <div style="font-size:0.75rem; color:var(--muted); margin-bottom:4px;">Warm-up ramp before your first working set (not logged as working sets)</div>
+      ${ramp}`;
+  };
+  draw();
+  overlay.addEventListener('input', draw);
+  overlay.querySelector('#plateClose').addEventListener('click', () => overlay.remove());
+  overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.remove(); });
+}
+
+/* ---------- Session summary + recovery feedback ---------- */
+function openSessionSummary(snapshot, prs) {
+  let setsDone = 0, volume = 0;
+  snapshot.exercises.forEach(e => e.sets.forEach(s => {
+    if (setHasValue(s)) setsDone++;
+    if (e.mode === 'weight') volume += (parseFloat(s.weight) || 0) * (parseInt(s.reps, 10) || 0);
+  }));
+  const st = data.sessionStart;
+  const mins = st && st.day === snapshot.day && st.date === snapshot.date ? Math.round((Date.now() - st.t) / 60000) : null;
+  const fb = Object.assign({ pump: '', soreness: '', joints: '' }, snapshot.feedback || {});
+  const seg = (key, opts) => `<div class="seg" data-seg="${key}">${opts.map(o => `<button type="button" data-val="${o}" class="${fb[key] === o ? 'on' : ''}">${o}</button>`).join('')}</div>`;
+  const overlay = document.createElement('div');
+  overlay.style.cssText = 'position:fixed; inset:0; background:rgba(0,0,0,0.5); display:flex; align-items:center; justify-content:center; z-index:1000; padding:20px;';
+  overlay.innerHTML = `<div style="background:var(--card); border-radius:14px; padding:20px; max-width:380px; width:100%; border:1px solid var(--border); max-height:88vh; overflow-y:auto;">
+    <div style="font-weight:600; font-size:1.05rem; margin-bottom:12px;">Session saved · ${escapeHtml(snapshot.day)}</div>
+    <div class="num" style="display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-bottom:12px; text-align:center;">
+      <div><div style="font-size:1.2rem; font-weight:700;">${setsDone}</div><div style="font-size:0.7rem; color:var(--muted);">sets</div></div>
+      <div><div style="font-size:1.2rem; font-weight:700;">${Math.round(volume).toLocaleString()}</div><div style="font-size:0.7rem; color:var(--muted);">kg lifted</div></div>
+      <div><div style="font-size:1.2rem; font-weight:700;">${mins != null ? mins : '–'}</div><div style="font-size:0.7rem; color:var(--muted);">minutes</div></div>
+    </div>
+    ${prs.length ? `<div style="background:var(--good-soft); border-radius:10px; padding:10px; margin-bottom:12px; font-size:0.84rem;">🏆 <strong>New best${prs.length > 1 ? 's' : ''}:</strong> ${prs.map(escapeHtml).join(', ')}</div>` : ''}
+    <div style="font-size:0.8rem; font-weight:600;">How was the pump?</div>${seg('pump', ['Low', 'Good', 'Great'])}
+    <div style="font-size:0.8rem; font-weight:600;">Soreness left from last ${escapeHtml(snapshot.day)}?</div>${seg('soreness', ['None', 'Mild', 'Still sore'])}
+    <div style="font-size:0.8rem; font-weight:600;">Joints?</div>${seg('joints', ['Fine', 'Achy', 'Painful'])}
+    <div id="fbTip" style="font-size:0.8rem; color:var(--muted); min-height:1.2em; margin-bottom:10px;"></div>
+    <div style="font-size:0.75rem; color:var(--muted); margin-bottom:12px;">Next time you open this day, the boxes start empty and today's numbers show faintly as your target.</div>
+    <div style="display:flex; justify-content:flex-end; gap:8px;"><button class="secondary" id="fbSkip" style="padding:9px 14px;">Skip</button><button class="primary" id="fbSave" style="flex:none; padding:9px 16px;">Save feedback</button></div>
+  </div>`;
+  document.body.appendChild(overlay);
+  const tip = () => {
+    let t = '';
+    if (fb.joints === 'Painful') t = 'Joint pain: swap the exercise that caused it (🔄) or lower the load next time.';
+    else if (fb.soreness === 'Still sore') t = 'Still sore: keep the same sets next time rather than adding more.';
+    else if (fb.pump === 'Low' && fb.soreness === 'None') t = 'Low pump, no soreness: you likely have room to add 1 set to a main lift next week.';
+    else if (fb.pump && fb.soreness && fb.joints) t = 'Recovering well: keep pushing reps and weight.';
+    overlay.querySelector('#fbTip').textContent = t;
+  };
+  overlay.addEventListener('click', (e) => {
+    const b = e.target.closest('[data-val]');
+    if (b) {
+      const key = b.parentElement.dataset.seg;
+      fb[key] = fb[key] === b.dataset.val ? '' : b.dataset.val;
+      b.parentElement.querySelectorAll('button').forEach(x => x.classList.toggle('on', x.dataset.val === fb[key]));
+      tip();
+    }
+    if (e.target.id === 'fbSkip' || e.target === overlay) overlay.remove();
+    if (e.target.id === 'fbSave') {
+      const h = history.find(x => x.date === snapshot.date && x.day === snapshot.day);
+      if (h) { h.feedback = fb; save(HISTORY_KEY, history); }
+      overlay.remove();
+      showToast('Feedback saved ✓');
+    }
+  });
+  tip();
+  stopRest();
+}
+
+/* ---------- Weekly sets per muscle ---------- */
+const MUSCLE_RULES = [
+  ['Quads', /squat|leg press|lunge|step-up|leg extension/i],
+  ['Hamstrings', /romanian|rdl|deadlift|good morning|leg curl/i],
+  ['Glutes', /squat|lunge|deadlift|rdl|romanian|hip thrust|glute|step-up/i],
+  ['Calves', /calf/i],
+  ['Chest', /bench|chest press|incline|push-up|pushup|fly|dip/i],
+  ['Shoulders', /overhead press|shoulder press|lateral|arnold|landmine|upright|rear delt|face pull|external rotation/i],
+  ['Back', /row|pull-up|pullup|pulldown|chin|deadlift|pull-apart/i],
+  ['Biceps', /^(?!.*leg curl).*(curl|chin)/i],
+  ['Triceps', /tricep|pushdown|skull|dip|close-grip|bench|overhead press/i],
+  ['Core', /plank|leg raise|crunch|ab wheel|dead bug|rotational|pallof/i],
+];
+// 10-20 hard sets per muscle per week is the commonly cited growth range.
+const VOL_LOW = 10, VOL_HIGH = 20, VOL_MAX = 26;
+function renderVolumePanel() {
+  const panel = document.getElementById('volumePanel');
+  const today = todayStr(), from = addDays(today, -6);
+  const counts = {}, last = {};
+  MUSCLE_RULES.forEach(([m]) => { counts[m] = 0; });
+  history.forEach(h => (h.exercises || []).forEach(e => {
+    const n = (e.sets || []).filter(setHasValue).length;
+    if (!n) return;
+    MUSCLE_RULES.forEach(([m, re]) => {
+      if (!re.test(e.name)) return;
+      if (h.date >= from && h.date <= today) counts[m] += n;
+      if (!last[m] || h.date > last[m]) last[m] = h.date;
+    });
+  }));
+  const rows = MUSCLE_RULES.map(([m]) => {
+    const c = counts[m];
+    const color = c > VOL_HIGH + 2 ? 'var(--bad)' : c >= VOL_LOW ? 'var(--good)' : 'var(--warn)';
+    const ago = last[m] ? daysBetween(last[m], today) : null;
+    const agoTxt = ago == null ? 'not logged yet' : ago === 0 ? 'trained today' : `last trained ${ago} day${ago === 1 ? '' : 's'} ago`;
+    return `<div class="vol-row">
+      <div><div>${m}</div><div style="font-size:0.66rem; color:var(--muted);">${agoTxt}</div></div>
+      <div class="vol-track"><div class="vol-band" style="left:${VOL_LOW / VOL_MAX * 100}%; width:${(VOL_HIGH - VOL_LOW) / VOL_MAX * 100}%;"></div><div class="vol-fill" style="width:${Math.min(100, c / VOL_MAX * 100)}%; background:${color};"></div></div>
+      <div class="num" style="text-align:right; font-weight:600;">${c}</div>
+    </div>`;
+  }).join('');
+  panel.innerHTML = `<div class="card">
+    <div style="font-weight:600; margin-bottom:2px;">📊 Sets per muscle · last 7 days</div>
+    <div style="font-size:0.75rem; color:var(--muted); margin-bottom:12px;">From saved sessions. Shaded zone = ${VOL_LOW}-${VOL_HIGH} sets, the usual range for growth. Compound lifts count for every muscle they train.</div>
+    ${rows}
+  </div>`;
+}
+document.body.addEventListener('click', (e) => {
+  if (e.target && e.target.id === 'volumeToggleBtn') {
+    const panel = document.getElementById('volumePanel');
+    if (panel.style.display === 'none') {
+      panel.style.display = 'block'; renderVolumePanel();
+      setTimeout(() => { try { panel.scrollIntoView({ behavior: 'smooth', block: 'start' }); } catch (err) {} }, 50);
+    } else panel.style.display = 'none';
+  }
+});
+
+/* ---------- Backup & restore ---------- */
+// Everything lives in this browser only. A backup is the only way to move it
+// to a new phone or recover it after clearing browser data.
+const BACKUP_KEY = 'workout_tracker_last_backup_v1';
+function collectBackup() {
+  const out = {};
+  try {
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (k && k.startsWith('workout_tracker') && k !== BACKUP_KEY) out[k] = JSON.parse(localStorage.getItem(k));
+    }
+  } catch (err) {}
+  return { app: 'my-workout-tracker', exported: todayStr(), data: out };
+}
+function renderBackupPanel() {
+  const panel = document.getElementById('backupPanel');
+  const last = load(BACKUP_KEY);
+  const json = JSON.stringify(collectBackup());
+  panel.innerHTML = `<div class="card">
+    <div style="font-weight:600; margin-bottom:4px;">💾 Backup</div>
+    <div style="font-size:0.78rem; color:var(--muted); margin-bottom:10px;">Your log is stored only in this browser. Copy this and keep it in your notes or email it to yourself. Last backup: <strong>${last || 'never'}</strong>.</div>
+    <textarea id="backupOut" readonly aria-label="Backup data">${escapeHtml(json)}</textarea>
+    <button class="primary" id="backupCopy" style="width:100%; margin-top:8px;">Copy backup</button>
+  </div>
+  <div class="card">
+    <div style="font-weight:600; margin-bottom:4px;">Restore</div>
+    <div style="font-size:0.78rem; color:var(--muted); margin-bottom:10px;">Paste a backup here. It replaces everything currently on this page.</div>
+    <textarea id="backupIn" aria-label="Paste backup"></textarea>
+    <button class="secondary" id="backupRestore" style="width:100%; margin-top:8px;">Restore from backup</button>
+  </div>`;
+}
+document.body.addEventListener('click', async (e) => {
+  const id = e.target && e.target.id;
+  if (id === 'backupToggleBtn') {
+    const panel = document.getElementById('backupPanel');
+    if (panel.style.display === 'none') {
+      panel.style.display = 'block'; renderBackupPanel();
+      setTimeout(() => { try { panel.scrollIntoView({ behavior: 'smooth', block: 'start' }); } catch (err) {} }, 50);
+    } else panel.style.display = 'none';
+  }
+  if (id === 'backupCopy') {
+    const ta = document.getElementById('backupOut');
+    try { await navigator.clipboard.writeText(ta.value); showToast('Backup copied ✓'); }
+    catch (err) { ta.focus(); ta.select(); showToast('Selected — copy it from the box'); }
+    save(BACKUP_KEY, todayStr());
+  }
+  if (id === 'backupRestore') {
+    let parsed;
+    try { parsed = JSON.parse(document.getElementById('backupIn').value); } catch (err) { parsed = null; }
+    if (!parsed || !parsed.data || !parsed.data[STATE_KEY]) { showToast('That doesn’t look like a backup from this page'); return; }
+    showInlineDialog({
+      message: `Restore the backup from ${parsed.exported || 'an unknown date'}? This replaces what's on this page now.`,
+      confirmText: 'Restore',
+      onConfirm: () => {
+        Object.keys(parsed.data).forEach(k => { if (k.startsWith('workout_tracker')) save(k, parsed.data[k]); });
+        location.reload();
+      }
+    });
+  }
+});
+
+/* ---------- Restore removed exercises ---------- */
+// Two sources: exercises deleted since this version (kept with their target,
+// swaps and notes), and anything logged in History for this day that is no
+// longer in the plan, which catches ones deleted before the bin existed.
+function removedCandidates(day) {
+  const current = new Set((data.days[day] || []).map(e => e.name));
+  const out = [], seen = new Set();
+  (data.trash || []).forEach((t, ti) => {
+    if (t.day !== day || current.has(t.ex.name) || seen.has(t.ex.name)) return;
+    seen.add(t.ex.name);
+    out.push({ name: t.ex.name, from: 'Deleted ' + t.date, trashIdx: ti });
+  });
+  const sorted = history.filter(h => h.day === day).sort((a, b) => b.date.localeCompare(a.date));
+  sorted.forEach(h => (h.exercises || []).forEach(e => {
+    if (current.has(e.name) || seen.has(e.name)) return;
+    const logged = (e.sets || []).filter(setHasValue);
+    if (!logged.length) return;
+    seen.add(e.name);
+    out.push({ name: e.name, from: 'Last logged ' + h.date, mode: e.mode, nSets: logged.length });
+  }));
+  return out;
+}
+function renderRestorePanel() {
+  const panel = document.getElementById('restorePanel');
+  const items = removedCandidates(data.active);
+  panel.innerHTML = `<div class="card">
+    <div style="font-weight:600; margin-bottom:2px;">♻️ Removed from ${escapeHtml(data.active)}</div>
+    <div style="font-size:0.75rem; color:var(--muted); margin-bottom:10px;">Restoring puts the exercise back with its history linked up again.</div>
+    ${items.length ? items.map((it, i) => `<div style="display:flex; justify-content:space-between; align-items:center; gap:8px; padding:8px 0; border-bottom:1px solid var(--border);">
+      <div style="min-width:0;"><div style="font-weight:600; font-size:0.9rem;">${escapeHtml(it.name)}</div><div style="font-size:0.72rem; color:var(--muted);">${escapeHtml(it.from)}</div></div>
+      <button class="primary" data-restore-ex="${i}" style="flex:none; padding:8px 14px;">Restore</button></div>`).join('')
+      : `<div class="empty-note">Nothing to restore here. If an exercise was deleted before it was ever saved, add it again with + Add exercise.</div>`}
+  </div>`;
+}
+document.body.addEventListener('click', (e) => {
+  const t = e.target;
+  if (t.id === 'restoreToggleBtn') {
+    const panel = document.getElementById('restorePanel');
+    if (panel.style.display === 'none') { panel.style.display = 'block'; renderRestorePanel(); }
+    else panel.style.display = 'none';
+  }
+  if (t.dataset && t.dataset.restoreEx !== undefined) {
+    const it = removedCandidates(data.active)[+t.dataset.restoreEx];
+    if (!it) return;
+    const list = data.days[data.active];
+    let ex, pos = list.length;
+    if (it.trashIdx !== undefined) {
+      const tr = data.trash[it.trashIdx];
+      ex = tr.ex;
+      ex.sets = ex.sets.map(() => ({}));
+      pos = Math.min(tr.idx, list.length);
+      data.trash.splice(it.trashIdx, 1);
+    } else {
+      const n = it.nSets || 3;
+      ex = { name: it.name, target: `${n} sets`, sets: Array.from({ length: n }, () => ({})),
+        allVariants: [it.name], variantIndex: 0, anchor: false, lastRotated: todayStr() };
+      if (it.mode) ex.mode = it.mode;
+    }
+    list.splice(pos, 0, ex);
+    persist();
+    renderExercises();
+    renderRestorePanel();
+    showToast('Restored ' + it.name + ' ✓');
+  }
+});
+
+/* ---------- One-time tidy-up (Oct 2026): face pull + preacher curl ---------- */
+// A seated cable face pull and a dumbbell preacher curl were logged on
+// 15 Oct, possibly in their own new tab. Both belong to Day 3 Pull:
+//  - Seated cable face pull is the plan's Face Pull, so it takes over that
+//    slot and the old Face Pull history is relinked to the new name.
+//  - Dumbbell preacher curl becomes the second curl (the Dumbbell Bicep Curl
+//    slot); plain dumbbell, incline and hammer curls stay as its swaps.
+// Any extra tab they were in is folded into Pull day, its saved sessions are
+// relinked there, and nothing logged is lost. Runs only until 31 Oct.
+function tidyFacePullAndPreacher() {
+  const FLAG = 'workout_tracker_tidy_facepull_preacher_v1';
+  if (load(FLAG) || todayStr() > '2026-10-31') return;
+  const FACE = /face\s*-?\s*pull/i, PREACH = /preacher/i;
+  const pullDay = data.order.find(d => /pull/i.test(d) && !FACE.test(d) && !PREACH.test(d));
+  if (!pullDay) return;
+  const pullList = data.days[pullDay];
+  const notes = [];
+  const incoming = []; // exercise objects to slot into Pull day
+
+  // 1. Extra tabs (not one of the numbered "Day" tabs) holding these moves.
+  data.order.slice().forEach(tab => {
+    if (tab === pullDay || /^day\s*\d/i.test(tab)) return;
+    const list = data.days[tab] || [];
+    const tabMatches = FACE.test(tab) || PREACH.test(tab);
+    const exMatches = list.length && list.every(ex => FACE.test(ex.name) || PREACH.test(ex.name));
+    if (!tabMatches && !exMatches) return;
+    // Save anything typed but not saved, so no numbers are lost.
+    if (dayHasValues(tab)) {
+      const date = (data.sessionDate && data.sessionDate[tab]) || todayStr();
+      if (!history.some(h => h.day === tab && h.date === date)) storeSnapshot(buildSnapshot(tab, date));
+    }
+    // Relink that tab's saved sessions to Pull day.
+    const kept = [];
+    history.forEach(h => {
+      if (h.day !== tab) { kept.push(h); return; }
+      const same = kept.find(m => m.day === pullDay && m.date === h.date) ||
+        history.find(m => m !== h && m.day === pullDay && m.date === h.date);
+      if (same) (h.exercises || []).forEach(e => { if (!same.exercises.some(x => x.name === e.name)) same.exercises.push(e); });
+      else { h.day = pullDay; kept.push(h); }
+    });
+    history = kept;
+    list.forEach(ex => incoming.push(Object.assign({}, ex, { sets: ex.sets.map(() => ({})) })));
+    delete data.days[tab];
+    data.order = data.order.filter(n => n !== tab);
+    if (data.active === tab) data.active = pullDay;
+    notes.push(`Folded the "${tab}" tab into ${pullDay}`);
+  });
+
+  // 2. Duplicates added straight into Pull day (keep their sets).
+  for (let i = pullList.length - 1; i >= 0; i--) {
+    const ex = pullList[i];
+    const dupFace = FACE.test(ex.name) && !/^face pull$/i.test(ex.name) && pullList.some((o, j) => j !== i && (o.allVariants || [o.name]).includes('Face Pull'));
+    const dupPreach = PREACH.test(ex.name) && pullList.some((o, j) => j !== i && (o.name === 'Dumbbell Bicep Curl' || (o.allVariants || []).includes('Dumbbell Bicep Curl')));
+    if (dupFace || dupPreach) incoming.push(pullList.splice(i, 1)[0]);
+  }
+
+  // 3. Slot each incoming move into its place in the plan.
+  incoming.forEach(ex => {
+    if (FACE.test(ex.name)) {
+      const slot = pullList.find(o => (o.allVariants || [o.name]).includes('Face Pull') || FACE.test(o.name));
+      if (slot && slot.name !== ex.name) {
+        const oldName = slot.name;
+        slot.name = ex.name;
+        slot.allVariants = [ex.name, ...(slot.allVariants || []).filter(v => v !== ex.name && v !== 'Face Pull')];
+        slot.variantIndex = 0;
+        if (ex.sets.some(setHasValue)) slot.sets = ex.sets;
+        if (ex.note && !slot.note) slot.note = ex.note;
+        // Same movement, so its past sessions carry over to the new name.
+        if (FACE.test(oldName)) history.forEach(h => { if (h.day === pullDay) (h.exercises || []).forEach(e => { if (e.name === oldName) e.name = ex.name; }); });
+        notes.push(`"${ex.name}" now replaces Face Pull, with your face-pull history kept`);
+      } else if (!slot) { pullList.push(Object.assign(ex, { anchor: false })); notes.push(`Added "${ex.name}" to ${pullDay}`); }
+    } else if (PREACH.test(ex.name)) {
+      const slot = pullList.find(o => o.name === 'Dumbbell Bicep Curl' || (o.allVariants || []).includes('Dumbbell Bicep Curl'));
+      if (slot) {
+        const prev = slot.allVariants && slot.allVariants.length ? slot.allVariants : [slot.name];
+        slot.allVariants = [ex.name, ...prev.filter(v => v !== ex.name)];
+        slot.name = ex.name;
+        slot.variantIndex = 0;
+        slot.target = '3 sets x 10-12 reps';
+        slot.lastRotated = todayStr();
+        delete slot.mode;
+        if (ex.sets.some(setHasValue)) slot.sets = ex.sets;
+        if (ex.note && !slot.note) slot.note = ex.note;
+        notes.push(`"${ex.name}" is now your second curl (tap 🔄 to swap back to dumbbell, incline or hammer curls)`);
+      } else if (!pullList.some(o => o.name === ex.name)) {
+        pullList.push(Object.assign(ex, { anchor: false, target: ex.target || '3 sets x 10-12 reps' }));
+        notes.push(`Added "${ex.name}" to ${pullDay}`);
+      }
+    }
+  });
+
+  if (!notes.length) return; // nothing found yet; try again next open
+  save(HISTORY_KEY, history);
+  data.tidyNote = { date: todayStr(), notes };
+  persist();
+  save(FLAG, true);
+}
+tidyFacePullAndPreacher();
+
+/* ---------- One-time move (Oct 2026): shrugs from Pull day to Day 4 ---------- */
+// Pull day already runs about an hour (deadlifts, pulldowns, rows, face pulls,
+// two curls), and deadlifts plus rows already work the traps hard and tire the
+// grip shrugs depend on. Day 4 is the shortest day, so shrugs go there, last.
+function moveShrugsToUpperDay() {
+  const FLAG = 'workout_tracker_move_shrugs_v1';
+  if (load(FLAG) || todayStr() > '2026-10-31') return;
+  const SHRUG = /shrug/i;
+  const upperDay = data.order.find(d => /upper/i.test(d));
+  if (!upperDay) return;
+  const upperList = data.days[upperDay];
+  const notes = [];
+  data.order.slice().forEach(day => {
+    if (day === upperDay) return;
+    const list = data.days[day] || [];
+    for (let i = list.length - 1; i >= 0; i--) {
+      if (!SHRUG.test(list[i].name)) continue;
+      const ex = list.splice(i, 1)[0];
+      if (!upperList.some(o => SHRUG.test(o.name))) {
+        ex.anchor = false;
+        if (!ex.target || !/\d/.test(ex.target)) ex.target = '3 sets x 12-15 reps';
+        if (!ex.note) ex.note = 'Hold 1 sec at the top, shoulders straight up (no rolling). Use straps if grip goes first.';
+        upperList.push(ex);
+      }
+      notes.push(`Moved "${ex.name}" from ${day} to the end of ${upperDay}`);
+    }
+    // A tab made only for shrugs is folded away once emptied.
+    if (!/^day\s*\d/i.test(day) && SHRUG.test(day) && !list.length) {
+      delete data.days[day];
+      data.order = data.order.filter(n => n !== day);
+      if (data.active === day) data.active = upperDay;
+    }
+  });
+  if (!notes.length) return;
+  const prev = data.tidyNote && !data.tidyNote.dismissed ? data.tidyNote.notes : [];
+  data.tidyNote = { date: todayStr(), notes: prev.concat(notes) };
+  persist();
+  save(FLAG, true);
+}
+moveShrugsToUpperDay();
+
+/* ---------- One-time move (Oct 2026): banded external rotation ---------- */
+// It was never done as a separate exercise. The seated cable face pull (with
+// the thumbs-back finish) now covers most of the same rotator-cuff work, so
+// the band move leaves the Day 1 list and becomes a 2-minute item in the
+// Push-day warm-up checklist instead. It goes to the restore bin, not lost.
+function moveBandedRotationToWarmup() {
+  const FLAG = 'workout_tracker_move_banded_er_v1';
+  if (load(FLAG) || todayStr() > '2026-10-31') return;
+  const BAND = /banded external rotation/i;
+  const notes = [];
+  data.order.forEach(day => {
+    const list = data.days[day] || [];
+    for (let i = list.length - 1; i >= 0; i--) {
+      if (!BAND.test(list[i].name)) continue;
+      const ex = list.splice(i, 1)[0];
+      data.trash = data.trash || [];
+      data.trash.unshift({ day, idx: i, ex: JSON.parse(JSON.stringify(ex)), date: todayStr() });
+      notes.push(`Moved "${ex.name}" out of ${day} into the ${'Push'} warm-up checklist (♻️ Restore brings it back)`);
+    }
+  });
+  const pushDay = data.order.find(d => /push/i.test(d));
+  if (pushDay) {
+    const st = getStretchesForDay(pushDay);
+    if (!st.pre.some(x => BAND.test(x.name))) {
+      st.pre.push({ name: 'Banded external rotation', detail: '2 x 15 each arm, light band', cue: 'Elbow pinned to your side (tuck a towel there), turn the forearm out slowly; no shrugging' });
+      persistStretches();
+      if (!notes.length) notes.push(`Added banded external rotation to the ${pushDay} warm-up checklist`);
+    }
+  }
+  if (!notes.length) { save(FLAG, true); return; }
+  const prev = data.tidyNote && !data.tidyNote.dismissed ? data.tidyNote.notes : [];
+  data.tidyNote = { date: todayStr(), notes: prev.concat(notes) };
+  persist();
+  save(FLAG, true);
+}
+moveBandedRotationToWarmup();
+
+/* ---------- One-time tidy (Oct 2026): Push warm-up band moves ---------- */
+// Band pull-aparts were never done and face pulls already train the same
+// upper back, so they leave the Push warm-up. External rotation stays, and
+// can be done on the lightest cable setting when no band is around.
+function tidyPushWarmupBands() {
+  const FLAG = 'workout_tracker_push_warmup_bands_v1';
+  if (load(FLAG) || todayStr() > '2026-10-31') return;
+  const pushDay = data.order.find(d => /push/i.test(d));
+  if (!pushDay) { save(FLAG, true); return; }
+  const st = getStretchesForDay(pushDay);
+  const before = st.pre.length;
+  st.pre = st.pre.filter(x => !/pull-?apart/i.test(x.name));
+  const er = st.pre.find(x => /external rotation/i.test(x.name));
+  if (er) { er.name = 'External rotation (band or cable)'; er.detail = '2 x 15 each arm, light band or the lightest cable weight'; }
+  persistStretches();
+  if (st.pre.length !== before) {
+    stretchChecks[pushDay] = { pre: [], post: (stretchChecks[pushDay] || {}).post || [] };
+    persistChecks();
+    const prev = data.tidyNote && !data.tidyNote.dismissed ? data.tidyNote.notes : [];
+    data.tidyNote = { date: todayStr(), notes: prev.concat([`Removed band pull-aparts from the ${pushDay} warm-up (face pulls cover them)`]) };
+    persist();
+  }
+  save(FLAG, true);
+}
+tidyPushWarmupBands();
+
+/* ---------- One-time (Oct 2026): Smith squat as a swap ---------- */
+// Smith squat overlaps the barbell squat almost completely, so it isn't a
+// new exercise. It joins the second quad slot (hack squat / leg press) as a
+// 🔄 option, and the barbell back squat stays the fixed anchor lift.
+function addSmithSquatSwap() {
+  const FLAG = 'workout_tracker_smith_swap_v1';
+  if (load(FLAG) || todayStr() > '2026-11-15') return;
+  const legDay = data.order.find(d => /legs?/i.test(d));
+  if (!legDay) return;
+  const SMITH = 'Smith Machine Squat';
+  const list = data.days[legDay];
+  if (list.some(ex => (ex.allVariants || [ex.name]).includes(SMITH))) { save(FLAG, true); return; }
+  const slot = list.find(ex => !ex.anchor && ((ex.allVariants || []).includes('Hack Squat / Leg Press') || /hack|leg press|front squat|goblet/i.test(ex.name)));
+  if (!slot) return;
+  slot.allVariants = (slot.allVariants && slot.allVariants.length ? slot.allVariants : [slot.name]).concat([SMITH]);
+  if (slot.variantIndex === undefined) slot.variantIndex = slot.allVariants.indexOf(slot.name);
+  const prev = data.tidyNote && !data.tidyNote.dismissed ? data.tidyNote.notes : [];
+  data.tidyNote = { date: todayStr(), notes: prev.concat([`Smith Machine Squat added as a 🔄 swap on "${slot.name}" (${legDay})`]) };
+  persist();
+  save(FLAG, true);
+}
+addSmithSquatSwap();
+
+function renderTidyNote() {
+  const n = data.tidyNote;
+  if (!n || n.dismissed) return '';
+  return `<div class="banner calm"><div><strong>Plan tidied</strong><br>${n.notes.map(escapeHtml).join('<br>')}</div><button class="del-btn" id="tidyDismiss" aria-label="Dismiss">✕</button></div>`;
+}
+document.body.addEventListener('click', (e) => {
+  if (e.target && e.target.id === 'tidyDismiss') { data.tidyNote.dismissed = true; persist(); renderMesoBanner(); }
+});
+
+// ---- Workout playlists: a Gym Mix plus one mix per training day ----
+const PLAYLISTS = {
+  gym: { name: 'Gym Mix', vibe: 'Hip hop, afrobeats & amapiano', sections: [
+    { phase: '🔥 Warm-up', tracks: [['Tyla','Water'],['Rema','Calm Down'],['Davido','Unavailable'],['Uncle Waffles','Tanzania']] },
+    { phase: '💪 Main work', tracks: [['TitoM & Yuppe','Tshwala Bam'],['Tyler ICU & Tumela_za','Mnike'],['Focalistic','Ke Star (Remix)'],['Asake','Lonely At The Top'],['Burna Boy','City Boys'],['Ayra Starr','Rush'],['Kabza De Small & DJ Maphorisa','Abalele']] },
+    { phase: '🚀 Heavy lifts', tracks: [['Eminem',"'Till I Collapse"],['Kanye West','Stronger'],['Travis Scott','SICKO MODE'],['Kendrick Lamar','Not Like Us'],['Future, Metro Boomin & Kendrick Lamar','Like That'],['DMX',"X Gon' Give It To Ya"]] },
+    { phase: '😮‍💨 Cool-down', tracks: [['Burna Boy','Last Last'],['Wizkid ft. Tems','Essence']] } ] },
+  d1: { name: 'Legs Mix', vibe: 'Hardest-hitting hip hop', sections: [
+    { phase: '🦵 Day 1 – Legs', tracks: [['Kanye West','Power'],['Travis Scott','FE!N'],['Kendrick Lamar','HUMBLE.'],['Eminem','Lose Yourself'],['Metro Boomin & 21 Savage','Runnin'],['50 Cent','In Da Club'],['DMX','Party Up'],['Asake','Terminator'],['Burna Boy','Ye'],['Kabza De Small','Sponono']] } ] },
+  d2: { name: 'Push Mix', vibe: 'Afrobeats', sections: [
+    { phase: '💪 Day 2 – Push', tracks: [['Asake','Sungba'],['Kizz Daniel','Buga'],['Fireboy DML','Peru'],['Wizkid','Joro'],['Rema','Dumebi'],['Ayra Starr','Commas'],['Davido','Fall'],['Omah Lay','Soso'],['Burna Boy','On the Low'],['Asake','Joha']] } ] },
+  d3: { name: 'Pull Mix', vibe: 'Amapiano', sections: [
+    { phase: '🏋️ Day 3 – Pull', tracks: [['Kabza De Small & DJ Maphorisa','Izolo'],['Dlala Thukzin','iPlan'],['Busta 929 & Mpura','Umsebenzi Wethu'],['Kamo Mphela','Nkulunkulu'],['Uncle Waffles','Yahyuppiyah'],['Focalistic & Davido','Champion Sound'],['Asake & Olamide','Amapiano'],['Musa Keys','Vula Mlomo'],['Tyla','Truth or Dare']] } ] },
+  d4: { name: 'Upper/Core Mix', vibe: 'Hip hop & afro mix', sections: [
+    { phase: '🔥 Day 4 – Upper/Core', tracks: [['Drake','Nonstop'],['Metro Boomin, Future & Chris Brown','Superhero'],['Travis Scott','goosebumps'],['J. Cole','No Role Modelz'],['A$AP Rocky','Praise the Lord'],['Kendrick Lamar','squabble up'],['Burna Boy','Anybody'],['Asake & Wizkid','MMS'],['Ayra Starr','Bloody Samaritan'],['Rema','Ozeba']] } ] },
+};
+// Match the open workout tab to its mix by "Day N" or by keyword, so renamed tabs still work.
+function mixForDay(dayName) {
+  const n = String(dayName || '').toLowerCase();
+  const m = n.match(/day\s*(\d)/);
+  if (m && PLAYLISTS['d' + m[1]]) return 'd' + m[1];
+  if (n.includes('leg')) return 'd1';
+  if (n.includes('push')) return 'd2';
+  if (n.includes('pull')) return 'd3';
+  if (n.includes('upper') || n.includes('core')) return 'd4';
+  return 'gym';
+}
+let musicApp = 'spotify';
+try { musicApp = localStorage.getItem('workout_tracker_music_app') || 'spotify'; } catch (err) {}
+let pickedMix = null; // null = follow the open workout tab
+function trackUrl(artist, title) {
+  const q = encodeURIComponent(artist + ' ' + title);
+  if (musicApp === 'ytmusic') return 'https://music.youtube.com/search?q=' + q;
+  if (musicApp === 'youtube') return 'https://www.youtube.com/results?search_query=' + q;
+  return 'https://open.spotify.com/search/' + q;
+}
+function renderPlaylistPanel() {
+  const panel = document.getElementById('playlistPanel');
+  const dayMix = mixForDay(data.active);
+  const key = pickedMix || dayMix;
+  const pl = PLAYLISTS[key];
+  const apps = [['spotify','Spotify'],['ytmusic','YT Music'],['youtube','YouTube']];
+  const mixes = [['gym','Gym Mix'],['d1','Legs'],['d2','Push'],['d3','Pull'],['d4','Upper/Core']];
+  let n = 0;
+  panel.innerHTML = `<div class="card" style="margin-top:10px;">
+    <div style="font-weight:600; margin-bottom:2px;">🎧 ${escapeHtml(pl.name)}</div>
+    <div class="empty-note" style="margin-bottom:8px;">${escapeHtml(pl.vibe)}${key === dayMix && !pickedMix && key !== 'gym' ? ' · matched to today’s workout' : ''} — tap a track to open it.</div>
+    <div class="seg">${mixes.map(([k, l]) => `<button data-mix="${k}" class="${key === k ? 'on' : ''}">${l}</button>`).join('')}</div>
+    <div class="seg" style="margin-top:-4px;">${apps.map(([k, l]) => `<button data-music-app="${k}" class="${musicApp === k ? 'on' : ''}">${l}</button>`).join('')}</div>
+    ${pl.sections.map(sec => `
+      <div style="font-size:0.78rem; color:var(--muted); text-transform:uppercase; letter-spacing:0.04em; margin:12px 0 6px;">${sec.phase}</div>
+      ${sec.tracks.map(([a, t]) => { n++; return `
+        <a href="${trackUrl(a, t)}" target="_blank" rel="noopener" style="display:flex; gap:10px; align-items:center; padding:9px 4px; border-top:1px solid var(--border); color:var(--text); text-decoration:none;">
+          <span class="num" style="width:20px; color:var(--muted); font-size:0.8rem; text-align:right;">${n}</span>
+          <span style="flex:1; min-width:0;"><span style="font-weight:600;">${escapeHtml(t)}</span><br><span style="color:var(--muted); font-size:0.8rem;">${escapeHtml(a)}</span></span>
+          <span style="color:var(--accent);">▶</span>
+        </a>`; }).join('')}`).join('')}
+    <div class="empty-note" style="margin-top:10px;">Tip: Soundcore app → EQ "Bass Booster" for amapiano log drums, ANC on at the gym.</div>
+  </div>`;
+}
+document.body.addEventListener('click', (e) => {
+  const t = e.target;
+  if (t && t.id === 'playlistToggleBtn') {
+    const panel = document.getElementById('playlistPanel');
+    if (panel.style.display === 'none') {
+      pickedMix = null;
+      panel.style.display = 'block';
+      renderPlaylistPanel();
+      setTimeout(() => { try { panel.scrollIntoView({ behavior: 'smooth', block: 'start' }); } catch (err) {} }, 50);
+    } else {
+      panel.style.display = 'none';
+    }
+  }
+  if (t && t.dataset && t.dataset.mix) { pickedMix = t.dataset.mix; renderPlaylistPanel(); }
+  if (t && t.dataset && t.dataset.musicApp) {
+    musicApp = t.dataset.musicApp;
+    try { localStorage.setItem('workout_tracker_music_app', musicApp); } catch (err) {}
+    renderPlaylistPanel();
+  }
+});
+// When the workout tab changes, follow it with that day's mix if the panel is open.
+const _renderAllBase = renderAll;
+renderAll = function () {
+  _renderAllBase.apply(this, arguments);
+  const panel = document.getElementById('playlistPanel');
+  if (panel && panel.style.display !== 'none') { pickedMix = null; renderPlaylistPanel(); }
+};
+
+/* ---------- Oct 2026: landmine slot alternates weekly ---------- */
+// User-requested: the Upper-day landmine slot alternates each week between
+// the straight Landmine Squat-to-Press (heavier, legs + shoulders) and the
+// Rotational Squat-to-Press (lighter, adds core rotation). Week of Mon
+// 2026-10-26 = straight (what was done on Oct 29), next week rotational, etc.
+// Each variant keeps its own history because history is keyed by name.
+const LM_STRAIGHT = 'Landmine Squat-to-Press';
+const LM_ROT = 'Landmine Rotational Squat-to-Press';
+const LM_TARGETS = {
+  [LM_STRAIGHT]: '3 sets x 10-12 reps',
+  [LM_ROT]: '3 sets x 10-12 reps per side, alternating sides'
+};
+function setupLandmineAlternation() {
+  const FLAG = 'workout_tracker_landmine_alt_v1';
+  if (load(FLAG)) return;
+  const upperDay = data.order.find(d => /upper/i.test(d));
+  if (!upperDay) return;
+  const ex = data.days[upperDay].find(e => /landmine/i.test(e.name) && /squat|rotational/i.test(e.name));
+  if (!ex) return;
+  ex.allVariants = [LM_STRAIGHT, LM_ROT];
+  ex.alternateWeekly = { start: '2026-10-26', variants: [LM_STRAIGHT, LM_ROT] };
+  // Oct 29 was actually done as the straight version: relabel it.
+  if (todayStr() < '2026-11-02') {
+    ex.name = LM_STRAIGHT; ex.variantIndex = 0; ex.target = LM_TARGETS[LM_STRAIGHT];
+  }
+  let hChanged = false;
+  history.forEach(h => {
+    if (h.day !== upperDay || h.date !== '2026-10-29') return;
+    (h.exercises || []).forEach(e => { if (e.name === LM_ROT) { e.name = LM_STRAIGHT; hChanged = true; } });
+  });
+  if (hChanged) save(HISTORY_KEY, history);
+  persist();
+  save(FLAG, true);
+}
+setupLandmineAlternation();
+
+// Every load: put the slot on this week's variant. Last session's numbers
+// are archived to History first (the normal new-session rollover), so they
+// stay under the name they were done as. Never switches mid-session.
+function altWeekIndex(alt, dateStr) {
+  const weeks = Math.floor(daysBetween(alt.start, mondayOf(dateStr)) / 7);
+  const n = alt.variants.length;
+  return ((weeks % n) + n) % n;
+}
+// Short name for this week's (offset 0) or next week's (offset 1) variant.
+function altLabel(ex, offset) {
+  const alt = ex.alternateWeekly;
+  const i = (altWeekIndex(alt, todayStr()) + offset) % alt.variants.length;
+  return (alt.short && alt.short[i]) || alt.variants[i];
+}
+// Once per week, put each alternating slot on that week's variant. Last
+// session's numbers are archived to History first (the normal new-session
+// rollover), so they stay under the name they were done as. Never switches
+// mid-session, and a 🔄 swap made during the week is left alone until the
+// next week starts.
+function syncWeeklyAlternates() {
+  const today = todayStr();
+  const week = mondayOf(today);
+  let changed = false;
+  data.order.forEach(day => {
+    (data.days[day] || []).forEach(ex => {
+      const alt = ex.alternateWeekly;
+      if (!alt || alt.appliedWeek === week) return;
+      const want = alt.variants[altWeekIndex(alt, today)];
+      if (ex.name !== want) {
+        rolloverIfStale(day);
+        if (ex.sets.some(s => setHasValue(s) || s.done)) return; // in progress or unsaved: try again later
+        ex.name = want;
+        ex.variantIndex = ex.allVariants.indexOf(want);
+        if (LM_TARGETS[want]) ex.target = LM_TARGETS[want];
+        ex.lastRotated = today;
+        delete ex.mode;
+      }
+      alt.appliedWeek = week;
+      changed = true;
+    });
+  });
+  if (changed) persist();
+}
+/* ---------- 29 Oct 2026, user-requested: Hack Squat / Leg Press alternate weekly ---------- */
+// Day 1's "Hack Squat / Leg Press" slot is split into two named exercises
+// that alternate each week: week of Mon 26 Oct = Hack Squat (what was done on
+// Monday), next week Leg Press, and so on. This week's Day 1 session is
+// relabelled Hack Squat so its numbers sit under the right exercise. Older
+// sessions logged under the combined name are left as they were.
+function setupHackLegPressAlternation() {
+  const FLAG = 'workout_tracker_hack_legpress_alt_v1';
+  if (load(FLAG)) return;
+  const COMBO = 'Hack Squat / Leg Press', HACK = 'Hack Squat', LP = 'Leg Press';
+  const WEEK = '2026-10-26';
+  const legDay = data.order.find(d => /legs?/i.test(d));
+  if (!legDay) return;
+  const slot = data.days[legDay].find(e => !e.anchor && (e.name === COMBO || (e.allVariants || []).includes(COMBO) || /hack squat|leg press/i.test(e.name)));
+  if (!slot) return;
+  const others = (slot.allVariants || []).filter(v => v !== COMBO && v !== HACK && v !== LP);
+  slot.allVariants = [HACK, LP, ...others];
+  slot.alternateWeekly = { start: WEEK, variants: [HACK, LP], appliedWeek: mondayOf(todayStr()) };
+  const wantNow = [HACK, LP][altWeekIndex(slot.alternateWeekly, todayStr())];
+  if (slot.name === COMBO || slot.name === HACK || slot.name === LP) slot.name = wantNow;
+  slot.variantIndex = slot.allVariants.indexOf(slot.name);
+  let hChanged = false;
+  history.forEach(h => {
+    if (h.day !== legDay || h.date < WEEK || h.date > addDays(WEEK, 6)) return;
+    (h.exercises || []).forEach(e => { if (e.name === COMBO) { e.name = HACK; hChanged = true; } });
+  });
+  if (hChanged) save(HISTORY_KEY, history);
+  // Short labels for the landmine slot's "this week / next week" line.
+  data.order.forEach(day => (data.days[day] || []).forEach(e => {
+    if (e.alternateWeekly && e.alternateWeekly.variants[0] === LM_STRAIGHT && !e.alternateWeekly.short) {
+      e.alternateWeekly.short = ['Straight', 'Rotational'];
+    }
+  }));
+  persist();
+  save(FLAG, true);
+}
+setupHackLegPressAlternation();
+/* ---------- 29 Oct 2026, user-requested: Day 2 plan for the weaker left arm ---------- */
+// 1. Incline press alternates weekly: Barbell this week (week of 26 Oct, as
+//    done), Dumbbell next week, so each arm has to press its own weight on
+//    dumbbell weeks. Machine Chest Press stays as a 🔄 swap.
+// 2. Single-arm Landmine Press added after the incline press, left arm
+//    first, with one extra set for the left. Nothing else on Day 2 changes.
+function setupPushWeakArmPlan() {
+  const FLAG = 'workout_tracker_push_weak_arm_v1';
+  if (load(FLAG)) return;
+  const pushDay = data.order.find(d => /push/i.test(d));
+  if (!pushDay) return;
+  const list = data.days[pushDay];
+  const IB = 'Incline Barbell Press', ID = 'Incline Dumbbell Press';
+  const slot = list.find(e => e.name === IB || e.name === ID || (e.allVariants || []).includes(IB));
+  if (slot) {
+    const others = (slot.allVariants || []).filter(v => v !== IB && v !== ID);
+    slot.allVariants = [IB, ID, ...others];
+    slot.alternateWeekly = { start: '2026-10-26', variants: [IB, ID], short: ['Barbell', 'Dumbbell'], appliedWeek: null };
+    if (slot.name !== IB && slot.name !== ID) slot.alternateWeekly.appliedWeek = mondayOf(todayStr());
+    slot.variantIndex = slot.allVariants.indexOf(slot.name);
+  }
+  if (!list.some(e => /single-arm landmine press/i.test(e.name))) {
+    const at = slot ? list.indexOf(slot) + 1 : list.length;
+    list.splice(at, 0, {
+      name: 'Single-arm Landmine Press', target: '3 sets x 8-10 reps each arm + 1 extra set left',
+      mode: 'weight', sets: [{}, {}, {}, {}],
+      allVariants: ['Single-arm Landmine Press'], variantIndex: 0, anchor: false, lastRotated: todayStr(),
+      note: 'Left arm first, then the right does the same reps (no more). Log the left arm. Set 4 is the extra left-only set.'
+    });
+  }
+  persist();
+  save(FLAG, true);
+}
+setupPushWeakArmPlan();
+
+/* ---------- 29 Oct 2026, user-requested: dumbbell shrugs + per-dumbbell logging ---------- */
+// Shrugs are done with dumbbells, so the exercise is renamed Dumbbell Shrugs
+// (its saved sessions are relinked to the new name). Shrugs and the dumbbell
+// RDL get a note to log the weight of ONE dumbbell, so numbers stay consistent.
+function dumbbellShrugsAndPerHandNote() {
+  const FLAG = 'workout_tracker_db_shrugs_v1';
+  if (load(FLAG)) return;
+  const NOTE = 'Log the weight of one dumbbell (e.g. 30, not 60).';
+  const addNote = ex => { if (!(ex.note || '').includes('one dumbbell')) ex.note = ex.note ? ex.note + ' ' + NOTE : NOTE; };
+  let hChanged = false;
+  data.order.forEach(day => (data.days[day] || []).forEach(ex => {
+    if (/shrug/i.test(ex.name)) {
+      const old = ex.name, NEW = 'Dumbbell Shrugs';
+      if (old !== NEW) {
+        ex.name = NEW;
+        ex.allVariants = [NEW, ...(ex.allVariants || []).filter(v => v !== old && v !== NEW)];
+        ex.variantIndex = 0;
+        history.forEach(h => (h.exercises || []).forEach(e => { if (e.name === old) { e.name = NEW; hChanged = true; } }));
+      }
+      addNote(ex);
+    } else if (/romanian deadlift \(dumbbell\)/i.test(ex.name)) {
+      addNote(ex);
+    }
+  }));
+  if (hChanged) save(HISTORY_KEY, history);
+  persist();
+  save(FLAG, true);
+}
+dumbbellShrugsAndPerHandNote();
+
+/* ---------- 30 Oct 2026, user-confirmed: halve old dumbbell totals ---------- */
+// Dumbbell Shrugs and Romanian Deadlift (Dumbbell) were logged as the total
+// of both dumbbells (e.g. 60) up to 29 Oct. From now on it's one dumbbell
+// (30), so every earlier entry for those two is halved to match. The original
+// numbers are kept in a separate backup key in case they're ever needed.
+function halveOldDumbbellTotals() {
+  const FLAG = 'workout_tracker_halve_db_totals_v1';
+  if (load(FLAG)) return;
+  const CUTOFF = '2026-10-30';
+  const MATCH = /^(dumbbell shrugs|romanian deadlift \(dumbbell\))$/i;
+  const half = w => { const n = parseFloat(w); return n ? String(Math.round(n / 2 * 100) / 100) : w; };
+  const backup = [];
+  let hChanged = false;
+  history.forEach(h => {
+    if (h.date >= CUTOFF) return;
+    (h.exercises || []).forEach(e => {
+      if (!MATCH.test(e.name)) return;
+      (e.sets || []).forEach((s, i) => {
+        if (!s.weight) return;
+        backup.push({ day: h.day, date: h.date, name: e.name, set: i, weight: s.weight });
+        s.weight = half(s.weight); hChanged = true;
+      });
+    });
+  });
+  // Numbers still sitting in the boxes from an earlier, unsaved session.
+  data.order.forEach(day => {
+    const d = data.sessionDate && data.sessionDate[day];
+    if (!d || d >= CUTOFF) return;
+    (data.days[day] || []).forEach(ex => {
+      if (!MATCH.test(ex.name)) return;
+      ex.sets.forEach((s, i) => {
+        if (!s.weight) return;
+        backup.push({ day, date: d, name: ex.name, set: i, weight: s.weight, draft: true });
+        s.weight = half(s.weight);
+      });
+    });
+  });
+  if (backup.length) save('workout_tracker_db_totals_backup_v1', backup);
+  if (hChanged) save(HISTORY_KEY, history);
+  persist();
+  save(FLAG, true);
+}
+halveOldDumbbellTotals();
+syncWeeklyAlternates();
+
+/* ---------- Oct 2026: Landmine Row as a swap for Chest-Supported Row ---------- */
+// The chest-supported row machine was taken on 29 Oct, so a landmine row was
+// done instead. Landmine Row joins that slot's 🔄 options, the 29 Oct session
+// is logged under its real name, and the slot goes back to Chest-Supported
+// Row automatically for the next session.
+function addLandmineRowSwap() {
+  const FLAG = 'workout_tracker_landmine_row_v1';
+  if (load(FLAG)) return;
+  const upperDay = data.order.find(d => /upper/i.test(d));
+  if (!upperDay) return;
+  const CSR = 'Chest-Supported Row', LMR = 'Landmine Row', DAY = '2026-10-29';
+  const slot = data.days[upperDay].find(e => e.name === CSR || (e.allVariants || []).includes(CSR));
+  if (!slot) return;
+  const vars = slot.allVariants && slot.allVariants.length ? slot.allVariants : [slot.name];
+  if (!vars.includes(LMR)) vars.push(LMR);
+  slot.allVariants = vars;
+  const doneThatDay = todayStr() === DAY || (data.sessionDate && data.sessionDate[upperDay] === DAY);
+  if (doneThatDay && slot.name !== LMR) {
+    slot.revert = { to: slot.name, after: DAY };
+    slot.name = LMR;
+    slot.variantIndex = vars.indexOf(LMR);
+    delete slot.mode;
+  }
+  let hChanged = false;
+  history.forEach(h => {
+    if (h.day !== upperDay || h.date !== DAY) return;
+    (h.exercises || []).forEach(e => { if (e.name === CSR) { e.name = LMR; hChanged = true; } });
+  });
+  if (hChanged) save(HISTORY_KEY, history);
+  persist();
+  save(FLAG, true);
+}
+addLandmineRowSwap();
+
+// One-off swaps flip back once their day has passed and the old numbers
+// have been archived to History.
+function revertOneOffSwaps() {
+  const today = todayStr();
+  let changed = false;
+  data.order.forEach(day => {
+    (data.days[day] || []).forEach(ex => {
+      if (!ex.revert || today <= ex.revert.after) return;
+      rolloverIfStale(day);
+      if (ex.sets.some(s => setHasValue(s) || s.done)) return;
+      ex.name = ex.revert.to;
+      ex.variantIndex = (ex.allVariants || []).indexOf(ex.name);
+      delete ex.revert;
+      delete ex.mode;
+      changed = true;
+    });
+  });
+  if (changed) persist();
+}
+revertOneOffSwaps();
+
+/* ---------- 29 Oct 2026, user-requested: put Shrugs back ---------- */
+// An earlier update moved shrugs off the day they were logged on. They go
+// back to the day their progress was tracked on (latest saved session with
+// shrug numbers; Pull day if there is none), so "last time" and the strength
+// trend line up again. Pulled from wherever they are now, or the restore
+// bin, or rebuilt from History if they were deleted outright.
+function returnShrugs() {
+  const FLAG = 'workout_tracker_return_shrugs_v1';
+  if (load(FLAG)) return;
+  save('workout_tracker_move_shrugs_v1', true); // the old move never runs again
+  const SHRUG = /shrug/i;
+  const logged = history
+    .filter(h => data.order.includes(h.day) && (h.exercises || []).some(e => SHRUG.test(e.name) && (e.sets || []).some(setHasValue)))
+    .sort((a, b) => b.date.localeCompare(a.date))[0];
+  const home = logged ? logged.day : data.order.find(d => /pull/i.test(d));
+  if (!home) { save(FLAG, true); return; }
+  const homeList = data.days[home];
+  if (homeList.some(e => SHRUG.test(e.name))) { save(FLAG, true); return; }
+  let ex = null;
+  data.order.forEach(day => {
+    if (ex || day === home) return;
+    const list = data.days[day] || [];
+    const i = list.findIndex(e => SHRUG.test(e.name));
+    if (i === -1) return;
+    if (list[i].sets.some(setHasValue) && data.sessionDate && data.sessionDate[day]) {
+      const date = data.sessionDate[day];
+      if (!history.some(h => h.day === day && h.date === date)) {
+        const snap = buildSnapshot(day, date); snap.autoArchived = true; storeSnapshot(snap);
+      }
+    }
+    ex = list.splice(i, 1)[0];
+    ex.sets = ex.sets.map(() => ({}));
+  });
+  if (!ex && data.trash) {
+    const ti = data.trash.findIndex(t => SHRUG.test(t.ex.name));
+    if (ti !== -1) { ex = data.trash.splice(ti, 1)[0].ex; ex.sets = ex.sets.map(() => ({})); }
+  }
+  if (!ex) {
+    const e = logged && logged.exercises.find(x => SHRUG.test(x.name));
+    const name = e ? e.name : 'Shrugs';
+    const n = e ? Math.max(3, e.sets.filter(setHasValue).length) : 3;
+    ex = { name, target: `${n} sets x 12-15 reps`, sets: Array.from({ length: n }, () => ({})),
+      allVariants: [name], variantIndex: 0, anchor: false, lastRotated: todayStr() };
+    if (e && e.mode) ex.mode = e.mode;
+  }
+  ex.anchor = false;
+  homeList.push(ex);
+  persist();
+  save(FLAG, true);
+}
+returnShrugs();
+
+/* ---------- 29 Oct 2026, user-requested: Side Plank on Day 4 ---------- */
+// Side plank added as its own exercise right after Plank; Plank goes from
+// 4 sets to 3 (an extra empty 4th set box is removed, logged ones are kept).
+function addSidePlankDay4() {
+  const FLAG = 'workout_tracker_side_plank_v1';
+  if (load(FLAG)) return;
+  const upperDay = data.order.find(d => /upper/i.test(d));
+  if (!upperDay) return;
+  const list = data.days[upperDay];
+  const pi = list.findIndex(e => /plank/i.test(e.name) && !/side/i.test(e.name));
+  if (pi !== -1) {
+    const p = list[pi];
+    p.target = '3 sets x 60 sec';
+    while (p.sets.length > 3 && !setHasValue(p.sets[p.sets.length - 1]) && !p.sets[p.sets.length - 1].done) p.sets.pop();
+  }
+  if (!list.some(e => /side plank/i.test(e.name))) {
+    list.splice(pi === -1 ? list.length : pi + 1, 0, {
+      name: 'Side Plank', target: '2 sets x 30-45 sec each side', mode: 'time',
+      sets: [{}, {}], allVariants: ['Side Plank'], variantIndex: 0, anchor: false, lastRotated: todayStr(),
+      note: 'Log the time for one side; do the same on the other side.'
+    });
+  }
+  persist();
+  save(FLAG, true);
+}
+addSidePlankDay4();
+
+/* ---------- 29 Oct 2026, user-requested: Landmine Sit-up on Day 4 (optional) ---------- */
+// Added after Side Plank as an optional core move; nothing else on the day changes.
+function addLandmineSitupDay4() {
+  const FLAG = 'workout_tracker_landmine_situp_v1';
+  if (load(FLAG)) return;
+  const upperDay = data.order.find(d => /upper/i.test(d));
+  if (!upperDay) return;
+  const list = data.days[upperDay];
+  if (!list.some(e => /landmine sit-?up/i.test(e.name))) {
+    const si = list.findIndex(e => /side plank/i.test(e.name));
+    list.splice(si === -1 ? list.length : si + 1, 0, {
+      name: 'Landmine Sit-up (optional)', target: '3 sets x 10-12 reps', mode: 'weight',
+      sets: [{}, {}, {}], allVariants: ['Landmine Sit-up (optional)'], variantIndex: 0, anchor: false, lastRotated: todayStr(),
+      note: 'Start with the empty bar. Arms stay straight over your chest, sit up and lower slowly. Tuck your chin if your neck strains.'
+    });
+  }
+  persist();
+  save(FLAG, true);
+}
+addLandmineSitupDay4();
+
+/* ---------- 30 Oct 2026, user-requested: stretch packs per day ---------- */
+// Each day gets a pack of extra warm-up (dynamic) and cool-down (static)
+// stretches for the same muscles, to pick from for variety. The day's own
+// list is unchanged. Ticked stretches are remembered per session, so the
+// panel can mark what was "done last time".
+const STRETCH_PACKS = {
+  legs: {
+    pre: [
+      { name: "World's greatest stretch", detail: "5 each side", cue: "Lunge, elbow to instep, then rotate and reach up; move slowly" },
+      { name: "Cossack squats", detail: "6 each side", cue: "Shift side to side, heel of the bent leg stays down" },
+      { name: "Lateral lunges", detail: "8 each side", cue: "Sit the hips back, keep the straight leg's foot flat" },
+      { name: "Inchworms", detail: "6 reps", cue: "Walk the hands out to a plank and back, knees soft" },
+      { name: "Fire hydrants", detail: "10 each side", cue: "On all fours, lift the knee out to the side, hips stay level" },
+      { name: "Bodyweight good mornings", detail: "12 reps", cue: "Hinge at the hips with a flat back, feel the hamstrings" },
+      { name: "Spiderman lunge with reach", detail: "5 each side", cue: "Foot outside the hand, sink the hips, reach to the sky" },
+      { name: "High knees / butt kicks", detail: "20 sec each", cue: "Light and quick, just to raise the heart rate" },
+    ],
+    post: [
+      { name: "Pigeon pose", detail: "45 sec each side", cue: "Square the hips, fold forward only as far as is comfortable" },
+      { name: "Couch stretch", detail: "45 sec each side", cue: "Back knee by a wall or bench, squeeze the glute, stay tall" },
+      { name: "Butterfly stretch", detail: "Hold 45 sec", cue: "Soles together, sit tall, ease the knees down with the elbows" },
+      { name: "Lying hamstring stretch (towel or strap)", detail: "30 sec each leg", cue: "Keep the lower back on the floor, slight knee bend is fine" },
+      { name: "Frog stretch", detail: "Hold 45 sec", cue: "Knees wide on a soft surface, rock back gently" },
+      { name: "Bent-knee calf stretch", detail: "30 sec each leg", cue: "Bend the back knee to reach the lower calf (soleus)" },
+      { name: "90/90 hip stretch", detail: "30 sec each side", cue: "Both knees at 90°, lean over the front shin with a flat back" },
+      { name: "Supine spinal twist", detail: "30 sec each side", cue: "Knee across the body, both shoulders stay on the floor" },
+    ],
+  },
+  push: {
+    pre: [
+      { name: "Scapular push-ups", detail: "12 reps", cue: "Arms straight, just let the chest sink and push away" },
+      { name: "Wall slides", detail: "10 reps", cue: "Back and arms against the wall, slide up without arching" },
+      { name: "Broomstick pass-throughs", detail: "10 reps", cue: "Wide grip, go over and behind only as far as is pain-free" },
+      { name: "Thoracic open books", detail: "8 each side", cue: "Lying on your side, open the top arm, eyes follow the hand" },
+      { name: "Prone Y-T-W raises", detail: "8 of each letter", cue: "Thumbs up, squeeze the shoulder blades, no weight needed" },
+      { name: "Incline push-ups", detail: "10 easy reps", cue: "Hands on a bench, slow and controlled, just to warm up" },
+      { name: "Wrist circles and rocks", detail: "30 sec", cue: "Prepares the wrists for pressing" },
+    ],
+    post: [
+      { name: "Prone chest opener", detail: "30 sec each side", cue: "Lie face down, arm out at 90°, gently roll away from it" },
+      { name: "Hands-behind-back chest stretch", detail: "Hold 30 sec", cue: "Clasp hands behind you, lift the chest, don't shrug" },
+      { name: "Puppy pose", detail: "Hold 30-45 sec", cue: "Hips over knees, walk the hands forward, chest toward the floor" },
+      { name: "Thread the needle", detail: "30 sec each side", cue: "On all fours, slide one arm under, rest the shoulder down" },
+      { name: "Towel triceps stretch", detail: "30 sec each arm", cue: "Top hand holds a towel behind the head, bottom hand pulls down gently" },
+      { name: "Wrist flexor stretch", detail: "20 sec each arm", cue: "Arm straight, palm up, pull the fingers back gently" },
+      { name: "Neck side stretch", detail: "20 sec each side", cue: "Ear toward the shoulder, opposite shoulder relaxed down" },
+    ],
+  },
+  pull: {
+    pre: [
+      { name: "Hip hinge drill (stick on back)", detail: "10 reps", cue: "Stick touches head, upper back and tailbone the whole time" },
+      { name: "Bird dogs", detail: "8 each side", cue: "Opposite arm and leg, hips stay level, pause at the top" },
+      { name: "Inchworms", detail: "6 reps", cue: "Walk out to a plank and back, warms hamstrings and back" },
+      { name: "Quadruped thoracic rotations", detail: "8 each side", cue: "Hand behind the head, rotate the elbow up toward the ceiling" },
+      { name: "Glute bridges", detail: "12 reps", cue: "Squeeze the glutes at the top, ribs down" },
+      { name: "Superman holds", detail: "3 x 10 sec", cue: "Lift arms and legs a little, look at the floor" },
+      { name: "Light dumbbell deadlifts", detail: "10 easy reps", cue: "Rehearse the movement before the heavy sets" },
+    ],
+    post: [
+      { name: "Child's pose with side reach", detail: "30 sec each side", cue: "Walk both hands to one side to stretch the lats" },
+      { name: "Thread the needle", detail: "30 sec each side", cue: "Opens the upper back after rows" },
+      { name: "Upper-back hug", detail: "Hold 30 sec", cue: "Hug yourself, round the upper back, breathe into it" },
+      { name: "Knees-to-chest hug", detail: "Hold 30-45 sec", cue: "Rock gently side to side to ease the lower back" },
+      { name: "Lying hamstring stretch (towel or strap)", detail: "30 sec each leg", cue: "Good after deadlifts, lower back stays down" },
+      { name: "Forearm flexor stretch", detail: "20 sec each arm", cue: "Grip work tightens the forearms, pull the fingers back gently" },
+      { name: "Supine figure-4", detail: "30 sec each side", cue: "Ankle over knee, pull the thigh toward you" },
+    ],
+  },
+  upper: {
+    pre: [
+      { name: "Bird dogs", detail: "8 each side", cue: "Brace the core, hips stay level" },
+      { name: "Dead bugs (slow)", detail: "8 each side", cue: "Lower back pressed into the floor the whole time" },
+      { name: "Thoracic open books", detail: "8 each side", cue: "Warms up rotation for the landmine work" },
+      { name: "Wall slides", detail: "10 reps", cue: "Shoulders down, slide up without arching" },
+      { name: "Lateral lunges", detail: "6 each side", cue: "Warms the hips for the landmine squat" },
+      { name: "Standing woodchops (no weight)", detail: "10 each side", cue: "Rotate from the hips and pivot the back foot" },
+      { name: "Bear crawl", detail: "20 sec forward and back", cue: "Knees just off the floor, back flat" },
+    ],
+    post: [
+      { name: "Puppy pose", detail: "Hold 30-45 sec", cue: "Opens shoulders and lats" },
+      { name: "Thread the needle", detail: "30 sec each side", cue: "Relaxes the upper back and shoulders" },
+      { name: "Sphinx pose", detail: "Hold 30 sec", cue: "Gentler than cobra, forearms down, relax the glutes" },
+      { name: "Kneeling hip flexor stretch with side reach", detail: "30 sec each side", cue: "Reach the arm over to the opposite side, stretches the obliques" },
+      { name: "Pigeon pose", detail: "45 sec each side", cue: "Hips after the squat-to-press" },
+      { name: "Supine spinal twist", detail: "30 sec each side", cue: "Both shoulders stay down, breathe slowly" },
+      { name: "Knees-to-chest hug", detail: "Hold 30 sec", cue: "Eases the lower back after core work" },
+    ],
+  },
+};
+const STRETCH_LOG_KEY = 'workout_tracker_stretch_log_v1';
+let stretchLog = load(STRETCH_LOG_KEY) || {};
+function packKeyForDay(dayName) {
+  const n = String(dayName || '').toLowerCase();
+  if (/leg/.test(n)) return 'legs';
+  if (/push/.test(n)) return 'push';
+  if (/pull/.test(n)) return 'pull';
+  if (/upper|core/.test(n)) return 'upper';
+  return null;
+}
+function seedStretchPacks() {
+  let changed = false;
+  data.order.forEach(day => {
+    const key = packKeyForDay(day);
+    if (!key) return;
+    const st = getStretchesForDay(day);
+    ['pre', 'post'].forEach(phase => {
+      if (st[phase + 'Pack']) return;
+      const have = new Set((st[phase] || []).map(x => x.name.toLowerCase()));
+      st[phase + 'Pack'] = STRETCH_PACKS[key][phase].filter(x => !have.has(x.name.toLowerCase())).map(x => Object.assign({}, x));
+      changed = true;
+    });
+  });
+  if (changed) persistStretches();
+}
+seedStretchPacks();
+// Remember which stretches were ticked today, by name.
+function logStretchNames(day) {
+  const st = getStretchesForDay(day), c = getChecksForDay(day), names = [];
+  ['pre', 'post', 'prePack', 'postPack'].forEach(k => (st[k] || []).forEach((x, i) => { if (c[k][i]) names.push(x.name); }));
+  stretchLog[day] = (stretchLog[day] || []).filter(e => e.date !== todayStr());
+  if (names.length) stretchLog[day].push({ date: todayStr(), names });
+  stretchLog[day] = stretchLog[day].slice(-20);
+  save(STRETCH_LOG_KEY, stretchLog);
+}
+// Names ticked in the most recent earlier session of this day.
+function lastStretchNames(day) {
+  const prev = (stretchLog[day] || []).filter(e => e.date < todayStr()).sort((a, b) => b.date.localeCompare(a.date))[0];
+  return new Set(prev ? prev.names : []);
+}
+
+renderAll();
+debugLog('Loaded ✓ — tap History or Share to test');
+setTimeout(() => { if (document.getElementById('debugStatus').textContent.startsWith('Loaded')) debugLog(''); }, 4000);
+</script>
+
+<div id="installBar" hidden style="position:fixed;left:16px;right:16px;bottom:calc(16px + env(safe-area-inset-bottom,0px));z-index:950;max-width:608px;margin:0 auto;background:var(--card);border:1px solid var(--accent);border-radius:14px;padding:12px 14px;display:flex;align-items:center;justify-content:space-between;gap:12px;box-shadow:0 6px 20px rgba(0,0,0,.18)">
+  <div style="min-width:0"><div style="font-weight:600">Install My Workout Tracker</div><div style="color:var(--muted);font-size:0.82rem">Its own icon, full screen, works offline.</div></div>
+  <div style="display:flex;gap:6px;flex:none"><button id="installLater" class="secondary" style="min-height:40px;padding:8px 12px">Later</button><button id="installBtn" class="primary" style="flex:none;padding:8px 14px">Install</button></div>
+</div>
+<div id="updateBar" hidden style="position:fixed;left:16px;right:16px;bottom:calc(16px + env(safe-area-inset-bottom,0px));z-index:960;max-width:608px;margin:0 auto;background:var(--accent);color:#fff;border-radius:14px;padding:12px 14px;display:flex;justify-content:space-between;align-items:center;gap:10px;font-weight:600">
+  <span>Update available</span><button id="updateBtn" style="background:#fff;color:var(--accent);border:none;border-radius:10px;padding:8px 14px;font-weight:600;cursor:pointer">Refresh</button>
+</div>
+<script>
+// ---- App shell: offline cache, updates, install button, move-your-data banner ----
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js').then(reg => {
+    const show = w => { document.getElementById('updateBar').hidden = false; document.getElementById('updateBtn').onclick = () => w.postMessage('skip'); };
+    if (reg.waiting && navigator.serviceWorker.controller) show(reg.waiting);
+    reg.addEventListener('updatefound', () => { const w = reg.installing; w.addEventListener('statechange', () => { if (w.state === 'installed' && navigator.serviceWorker.controller) show(w); }); });
+    setInterval(() => reg.update(), 60 * 60 * 1000);
+  }).catch(() => {});
+  let reloaded = false;
+  navigator.serviceWorker.addEventListener('controllerchange', () => { if (!reloaded) { reloaded = true; location.reload(); } });
+}
+(function () {
+  const standalone = matchMedia('(display-mode: standalone)').matches || navigator.standalone;
+  let deferred = null;
+  const bar = document.getElementById('installBar');
+  const later = () => { try { return localStorage.getItem('wt_app_install_later') === '1'; } catch (e) { return false; } };
+  window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); deferred = e; if (!standalone && !later()) bar.hidden = false; });
+  document.getElementById('installBtn').addEventListener('click', async () => { if (!deferred) return; deferred.prompt(); try { await deferred.userChoice; } catch (e) {} deferred = null; bar.hidden = true; });
+  document.getElementById('installLater').addEventListener('click', () => { bar.hidden = true; try { localStorage.setItem('wt_app_install_later', '1'); } catch (e) {} });
+  window.addEventListener('appinstalled', () => { bar.hidden = true; });
+
+  // First open with no history yet: point to Backup / restore to bring the old log across.
+  let hasHistory = false;
+  try { hasHistory = (JSON.parse(localStorage.getItem('workout_tracker_history_v2')) || []).length > 0; } catch (e) {}
+  let dismissed = false;
+  try { dismissed = localStorage.getItem('wt_app_move_dismissed') === '1'; } catch (e) {}
+  if (!hasHistory && !dismissed) {
+    const el = document.createElement('div');
+    el.className = 'banner info';
+    el.innerHTML = '<div><strong>Moving from the old tracker?</strong><br>In the old one: 💾 Backup / restore → Copy backup. Here: 💾 Backup / restore → paste it under Restore → Restore from backup.</div>' +
+      '<div style="display:flex;flex-direction:column;gap:6px"><button class="primary" id="moveOpen" style="padding:8px 12px">Open restore</button><button class="del-btn" id="moveDismiss" aria-label="Dismiss">Not now</button></div>';
+    const wrap = document.querySelector('.wrap header');
+    if (wrap) wrap.insertAdjacentElement('afterend', el);
+    el.addEventListener('click', ev => {
+      if (ev.target.id === 'moveDismiss') { el.remove(); try { localStorage.setItem('wt_app_move_dismissed', '1'); } catch (e) {} }
+      if (ev.target.id === 'moveOpen') {
+        const panel = document.getElementById('backupPanel');
+        if (panel.style.display === 'none') document.getElementById('backupToggleBtn').click();
+        setTimeout(() => { const box = document.getElementById('backupIn'); if (box) { box.scrollIntoView({ behavior: 'smooth', block: 'center' }); box.focus(); } }, 120);
+      }
+    });
+  }
+})();
+</script>
+</body>
+</html>
