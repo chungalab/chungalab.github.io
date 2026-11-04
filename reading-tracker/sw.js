@@ -1,5 +1,5 @@
 // Bump VERSION whenever you change a file.
-const VERSION = 'v1';
+const VERSION = 'v2';
 const CACHE = 'reading-tracker-' + VERSION;
 const COVERS = 'reading-covers';
 const FILES = ['./', 'index.html', 'manifest.webmanifest', 'icon-192.png', 'icon-512.png', 'icon-maskable-512.png'];

@@ -240,9 +240,10 @@ details{margin-top:10px}summary{cursor:pointer;color:var(--mute);font-size:14px}
     <p class="mute">Pace is learned from sessions with minutes (the timer does this for you). Until then it assumes 1 page every 2 minutes.</p>
   </div></div>
   <div class="card"><div class="in"><h3>Your data</h3>
+    <div id="gsync" style="margin-bottom:14px"></div>
     <p class="mute" id="sync" style="margin-top:0">Saved on this phone.</p>
     <div class="row"><button class="sun" id="backupbtn">Save a backup file</button><label class="ghost" style="display:inline-block;padding:10px 14px;border-radius:12px;border:1px solid var(--line);font-weight:600;cursor:pointer;color:var(--mute)">Restore from backup<input type="file" id="restore" accept=".json,application/json" hidden></label></div>
-    <p class="mute">Your books live only on this phone, with no account. Save a backup now and then (to Google Drive, WhatsApp to yourself, or your Downloads) so you never lose them. Restoring a backup replaces what is here.</p>
+    <p class="mute">A backup file is a second safety net, and a way to move your books without signing in. Restoring a backup replaces what is here.</p>
   </div></div>
 </section>
 </main>
@@ -275,7 +276,7 @@ var openBook=null,tab='today',shelfView='want',tagView='',pendingDel=null,newCov
 
 /* ---------- saving: on this phone, with backup files ---------- */
 var saveFailed=false;
-function save(){S.at=Date.now();try{localStorage.setItem(KEY,JSON.stringify(S));saveFailed=false}catch(e){saveFailed=true;toast('Phone storage is full. Save a backup, then remove some cover photos.')}}
+function save(){S.at=Date.now();try{localStorage.setItem(KEY,JSON.stringify(S));saveFailed=false}catch(e){saveFailed=true;toast('Phone storage is full. Save a backup, then remove some cover photos.')}if(window.queueSync)queueSync()}
 function applyTheme(){var r=document.documentElement;if(S.theme)r.setAttribute('data-theme',S.theme);else r.removeAttribute('data-theme');
   var dark=S.theme==='dark'||(!S.theme&&matchMedia('(prefers-color-scheme:dark)').matches);document.querySelector('meta[name=theme-color]').content=dark?'#232b52':'#1b2340'}
 var persisted=false;
@@ -303,6 +304,60 @@ document.getElementById('restore').addEventListener('change',async function(){
     S=n;S.backedUp=S.backedUp||today();save();applyTheme();render();toast('Restored '+S.books.length+' books');confetti()}
   catch(e){toast('That file is not a reading tracker backup.')}});
 document.getElementById('backupbtn').onclick=backup;
+
+/* ---------- Google Drive sync: your books in a hidden app folder in your own Drive ---------- */
+var GCLIENT='';   /* OAuth Web client ID from Google Cloud Console */
+var GSCOPE='https://www.googleapis.com/auth/drive.appdata',GFILE='reading-tracker.json';
+var gTok=null,gClient=null,gFileId=null,gBusy=false,gDirty=false,gTimer=null,gState='';
+try{var _t=JSON.parse(localStorage.getItem('rt_gtok')||'null');if(_t&&_t.exp>Date.now()+60000)gTok=_t}catch(e){}
+try{gDirty=localStorage.getItem('rt_gdirty')==='1'}catch(e){}
+function setDirty(v){gDirty=v;try{localStorage.setItem('rt_gdirty',v?'1':'0')}catch(e){}}
+function tokOk(){return gTok&&gTok.exp>Date.now()+30000}
+function loadGsi(){return new Promise(function(res,rej){if(window.google&&google.accounts&&google.accounts.oauth2)return res();var s=document.createElement('script');s.src='https://accounts.google.com/gsi/client';s.async=true;s.onload=function(){res()};s.onerror=function(){rej(new Error('offline'))};document.head.appendChild(s)})}
+async function gSignIn(){
+  if(!GCLIENT){toast('Google sync is not set up yet.');return}
+  if(!navigator.onLine){toast('You are offline. Connect to the internet to sync.');return}
+  try{await loadGsi()}catch(e){toast('Could not reach Google. Check your internet and try again.');return}
+  if(!gClient)gClient=google.accounts.oauth2.initTokenClient({client_id:GCLIENT,scope:GSCOPE,callback:function(r){
+    if(!r||r.error){gState='';renderSync();toast(r&&r.error==='access_denied'?'Sign-in cancelled.':'Google sign-in did not work. Try again.');return}
+    gTok={t:r.access_token,exp:Date.now()+(+r.expires_in||3600)*1000};try{localStorage.setItem('rt_gtok',JSON.stringify(gTok))}catch(e){}
+    var first=!S.gsync;S.gsync=true;try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}
+    gSync(first)},error_callback:function(){gState='';renderSync()}});
+  gState='signing';renderSync();
+  gClient.requestAccessToken({prompt:S.gsync?'':'consent'})}
+async function gFetch(url,opt){opt=opt||{};opt.headers=Object.assign({Authorization:'Bearer '+gTok.t},opt.headers||{});var r=await fetch(url,opt);if(r.status===401){gTok=null;try{localStorage.removeItem('rt_gtok')}catch(e){}throw new Error('auth')}if(!r.ok)throw new Error('http '+r.status);return r}
+async function gFind(){if(gFileId)return gFileId;var r=await gFetch('https://www.googleapis.com/drive/v3/files?spaces=appDataFolder&fields=files(id,modifiedTime)&q='+encodeURIComponent("name='"+GFILE+"'"));var j=await r.json();gFileId=j.files&&j.files[0]?j.files[0].id:null;return gFileId}
+async function gPull(){var id=await gFind();if(!id)return null;var r=await gFetch('https://www.googleapis.com/drive/v3/files/'+id+'?alt=media');try{return readBackup(await r.text())}catch(e){return null}}
+async function gPush(){var body=JSON.stringify({app:'chungalab-reading-tracker',v:1,exported:new Date().toISOString(),state:S}),id=await gFind();
+  if(id){await gFetch('https://www.googleapis.com/upload/drive/v3/files/'+id+'?uploadType=media',{method:'PATCH',headers:{'Content-Type':'application/json'},body:body})}
+  else{var fd=new FormData();fd.append('metadata',new Blob([JSON.stringify({name:GFILE,parents:['appDataFolder']})],{type:'application/json'}));fd.append('file',new Blob([body],{type:'application/json'}));
+    var r=await gFetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id',{method:'POST',body:fd});gFileId=(await r.json()).id}}
+/* Compare this phone with Drive: the newer copy wins. On a new phone with no books, Drive's copy is loaded. */
+async function gSync(first){
+  if(!S.gsync||!tokOk()||gBusy)return;gBusy=true;gState='syncing';renderSync();
+  try{
+    var remote=await gPull();
+    if(remote&&(remote.at||0)>(S.at||0)&&!(gDirty&&S.books.length&&!first)){
+      var had=S.books.length;S=normalize(remote);S.gsync=true;try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}setDirty(false);applyTheme();render();
+      if(!had&&S.books.length){toast('Welcome back! '+S.books.length+' books loaded from Google Drive');confetti()}}
+    else if(remote&&(remote.at||0)>(S.at||0)&&gDirty&&S.books.length){
+      if(confirm('Google Drive has a newer copy from another phone ('+remote.books.length+' books). Load it here? Tap Cancel to keep this phone\'s copy and send it to Drive instead.')){S=normalize(remote);S.gsync=true;try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}setDirty(false);applyTheme();render()}
+      else{await gPush();setDirty(false)}}
+    else if(!remote||(S.at||0)>(remote.at||0)||gDirty){await gPush();setDirty(false);if(first)toast('Synced. Your books are now saved in your Google Drive.')}
+    else if(first)toast('Synced with Google Drive.');
+    S.lastSync=Date.now();try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}
+  }catch(e){if(e.message!=='auth')toast('Could not sync just now. Your books are safe on this phone.')}
+  gBusy=false;gState='';renderSync();renderNudge()}
+function queueSync(){if(!S.gsync)return;setDirty(true);clearTimeout(gTimer);gTimer=setTimeout(function(){if(tokOk()&&navigator.onLine)gSync(false);else{renderSync();renderNudge()}},1500)}
+function gDisconnect(){if(!confirm('Stop syncing this phone with Google Drive? Your books stay on this phone and in your Drive.'))return;
+  try{if(gTok&&window.google&&google.accounts)google.accounts.oauth2.revoke(gTok.t,function(){})}catch(e){}
+  gTok=null;gFileId=null;try{localStorage.removeItem('rt_gtok')}catch(e){}S.gsync=false;setDirty(false);save();render();toast('Google sync turned off on this phone')}
+function ago(t){if(!t)return'';var m=Math.round((Date.now()-t)/60000);return m<1?'just now':m<60?m+' min ago':m<1440?Math.round(m/60)+' h ago':Math.round(m/1440)+' days ago'}
+function renderSync(){var el=document.getElementById('gsync');if(!el)return;
+  if(!GCLIENT){el.innerHTML='';return}
+  if(gState){el.innerHTML='<p class="mute" style="margin:0">'+(gState==='signing'?'Waiting for Google sign-in…':'Syncing with Google Drive…')+'</p>';return}
+  if(!S.gsync){el.innerHTML='<div class="row" style="margin-top:0"><button class="sun" onclick="gSignIn()"><span aria-hidden="true">G</span>&nbsp; Sign in with Google to sync</button></div><p class="mute">Keeps your books in your own Google Drive, in a private app folder. Sign in on any phone to get them back.</p>';return}
+  el.innerHTML='<p style="margin:0;font-weight:600">'+(tokOk()?'✓ Syncing with Google Drive':'Google Drive sync is paused')+'</p><p class="mute">'+(gDirty?'Latest changes not sent yet. ':'All changes saved to Drive. ')+(S.lastSync?'Last sync '+ago(S.lastSync)+'.':'')+(tokOk()?'':' Google asks you to tap once to reconnect after a while.')+'</p><div class="row"><button class="'+(tokOk()?'ghost':'sun')+'" onclick="'+(tokOk()?'gSync(false)':'gSignIn()')+'">'+(tokOk()?'Sync now':'Reconnect and sync')+'</button><button class="ghost" onclick="gDisconnect()">Turn off sync</button></div>'}
 
 /* ---------- helpers ---------- */
 function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
@@ -580,7 +635,7 @@ function renderStats(){
   document.getElementById('gm').value=S.gm||'auto';document.getElementById('gv').value=S.gv||20;document.getElementById('gvwrap').hidden=S.gm==='auto'||!S.gm;
   document.getElementById('gvwrap').firstChild.textContent=S.gm==='minutes'?'Minutes a day':'Pages a day';
   document.getElementById('theme').value=S.theme||'';
-  renderCal();renderWrap(y,fin,pages,minsT);renderData()}
+  renderCal();renderWrap(y,fin,pages,minsT);renderData();renderSync()}
 function lvl(p){return !p?'':p<10?'l1':p<25?'l2':p<50?'l3':'l4'}
 function renderCal(){
   var weeks=20,end=new Date(),start=new Date();start.setDate(end.getDate()-end.getDay()-(weeks-1)*7);
@@ -622,7 +677,8 @@ async function shareWrap(){
   var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;a.click();setTimeout(function(){URL.revokeObjectURL(a.href)},1000);toast('Picture saved to your Downloads')}
 function renderNudge(){
   var el=document.getElementById('nudge'),n=S.books.length,last=S.backedUp,age=last?Math.round((new Date(today())-new Date(last))/864e5):999;
-  el.innerHTML=n>=3&&age>=14?'<div class="note warn">'+(last?'Your last backup was '+age+' days ago.':'You have not saved a backup yet.')+' Your books live only on this phone. <button class="ghost" style="padding:4px 10px;font-size:13px;margin-left:4px" onclick="backup()">Back up now</button></div>':''}
+  if(S.gsync&&GCLIENT&&!tokOk()&&gDirty){el.innerHTML='<div class="note">You have changes not yet saved to Google Drive. <button class="ghost" style="padding:4px 10px;font-size:13px;margin-left:4px" onclick="gSignIn()">Sync now</button></div>';return}
+  el.innerHTML=!S.gsync&&n>=3&&age>=14?'<div class="note warn">'+(last?'Your last backup was '+age+' days ago.':'You have not saved a backup yet.')+' Your books live only on this phone. <button class="ghost" style="padding:4px 10px;font-size:13px;margin-left:4px" onclick="backup()">Back up now</button></div>':''}
 function render(){renderHero();renderNudge();renderToday();renderShelves();renderStats();tick()}
 function go(t,shelf){tab=t;if(shelf)shelfView=shelf;['today','add','shelves','stats'].forEach(function(k){document.getElementById('p-'+k).hidden=k!==t;document.getElementById('t-'+k).setAttribute('aria-selected',k===t)});render();window.scrollTo({top:0})}
 document.querySelectorAll('.tabs button').forEach(function(b){b.onclick=function(){go(b.dataset.tab)}});
@@ -640,10 +696,11 @@ document.getElementById('gm').onchange=function(){S.gm=this.value;save();render(
 document.getElementById('gv').onchange=function(){S.gv=Math.max(1,Math.round(+this.value)||20);save();render()};
 document.getElementById('theme').onchange=function(){S.theme=this.value;save();applyTheme();render()};
 matchMedia('(prefers-color-scheme:dark)').addEventListener('change',applyTheme);
-document.addEventListener('visibilitychange',function(){if(!document.hidden)render()});
+document.addEventListener('visibilitychange',function(){if(!document.hidden){render();if(S.gsync&&tokOk())gSync(false)}});
+window.addEventListener('online',function(){if(S.gsync&&tokOk()&&gDirty)gSync(false)});
 applyTheme();
 (function(){var p=new URLSearchParams(location.search).get('tab');if(p==='add'||p==='stats'||p==='shelves')go(p);else render()})();
-setInterval(tick,30000);setInterval(clock,1000);askPersist();
+setInterval(tick,30000);setInterval(clock,1000);askPersist();if(S.gsync&&tokOk())gSync(false);
 
 /* ---------- app shell: offline cache, updates, install button ---------- */
 if('serviceWorker' in navigator){
@@ -653,7 +710,7 @@ if('serviceWorker' in navigator){
     reg.addEventListener('updatefound',function(){var w=reg.installing;w.addEventListener('statechange',function(){if(w.state==='installed'&&navigator.serviceWorker.controller)show(w)})});
     setInterval(function(){reg.update().catch(function(){})},60*60*1000);
   }).catch(function(){});
-  var reloaded=false;navigator.serviceWorker.addEventListener('controllerchange',function(){if(!reloaded){reloaded=true;location.reload()}});
+  var hadCtl=!!navigator.serviceWorker.controller,reloaded=false;navigator.serviceWorker.addEventListener('controllerchange',function(){if(hadCtl&&!reloaded){reloaded=true;location.reload()}});
 }
 (function(){
   var deferred=null,bar=document.getElementById('installBar'),standalone=matchMedia('(display-mode: standalone)').matches||navigator.standalone;
