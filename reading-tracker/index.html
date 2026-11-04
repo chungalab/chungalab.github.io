@@ -1,0 +1,668 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>My Reading Tracker</title>
+<meta name="description" content="Personal reading tracker: shelves, barcode scanning, reading timer, streaks, goals and stats.">
+<meta name="theme-color" content="#1b2340">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Reading">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&family=Literata:ital,opsz,wght@0,7..72,500;1,7..72,400&display=swap">
+<style>
+:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+img{max-width:100%}[hidden]{display:none!important}
+/* Layout: navy "bookmark" hero with today's ring, sticky tab strip, single 560px column of book cards */
+:root{
+  --bg:#f2f4fb;--card:#fff;--ink:#1b2340;--mute:#5f6989;--hero:#1b2340;--hero-ink:#fff;
+  --sun:#f5b942;--sun-ink:#1b2340;--sky:#3fb6a8;--sky-ink:#062b26;--line:#e0e5f3;--field:#f2f4fb;
+  --ok-bg:#d5f2ec;--ok:#0c5c50;--bad-bg:#fbdcd9;--bad:#8a2a22;
+  --display:'Bricolage Grotesque',system-ui,-apple-system,'Segoe UI',sans-serif;
+  --book:'Literata',Georgia,'Times New Roman',serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0f1426;--card:#19203a;--ink:#eef1fb;--mute:#9aa4c4;--hero:#232b52;--line:#2b3357;--field:#121831;
+  --ok-bg:#14453f;--ok:#a6ecdf;--bad-bg:#57231f;--bad:#ffc7c1;color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0f1426;--card:#19203a;--ink:#eef1fb;--mute:#9aa4c4;--hero:#232b52;--line:#2b3357;--field:#121831;
+  --ok-bg:#14453f;--ok:#a6ecdf;--bad-bg:#57231f;--bad:#ffc7c1;color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--display);line-height:1.45;font-size:15px}
+main{max-width:560px;margin:0 auto;padding:0 16px 56px}
+.hero{background:var(--hero);color:var(--hero-ink);margin:0 -16px;padding:22px 20px 20px;border-radius:0 0 30px 30px}
+.hero h1{font-size:28px;font-weight:800;margin:0;text-wrap:balance}.hero p{margin:2px 0 0;opacity:.75}
+.top{display:flex;align-items:center;gap:18px;margin-top:16px;flex-wrap:wrap}
+.ring{position:relative;width:124px;height:124px;flex:none}
+.ring svg,.mini svg{transform:rotate(-90deg)}.ring .c{position:absolute;inset:0;display:grid;place-content:center;text-align:center}
+.ring b{font-size:32px;line-height:1;font-weight:800;font-variant-numeric:tabular-nums}.ring span{font-size:12px;opacity:.75}
+.dots{display:flex;gap:6px;margin-top:8px}.dots i{width:22px;height:22px;border-radius:50%;background:rgba(255,255,255,.15);display:grid;place-items:center;font-size:10px;font-style:normal}
+.dots i.on{background:var(--sun);color:var(--sun-ink);font-weight:800}
+.count{margin-top:14px;padding:10px 14px;border-radius:14px;background:rgba(255,255,255,.12);font-weight:600}
+.count.live{background:var(--sun);color:var(--sun-ink)}
+.timerbar{margin-top:10px;padding:10px 14px;border-radius:14px;background:var(--sky);color:var(--sky-ink);display:flex;gap:10px;align-items:center;flex-wrap:wrap;font-weight:600}
+.timerbar b{font-size:20px;font-variant-numeric:tabular-nums}
+.tabs{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);display:flex;gap:6px;padding-block:12px;margin-bottom:4px}
+.tabs button{flex:1;background:var(--card);color:var(--mute);border:1px solid var(--line);padding:9px 6px;border-radius:12px;font-size:14px}
+.tabs button[aria-selected="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:20px;margin-bottom:14px;overflow:hidden}
+.card .in{padding:16px 18px;min-width:0}
+.book{display:flex}.spine{width:10px;flex:none}
+.bh{display:flex;gap:12px;align-items:center}
+.mini{position:relative;width:60px;height:60px;flex:none}.mini b{position:absolute;inset:0;display:grid;place-items:center;font-size:14px}
+h2{font-family:var(--book);font-size:19px;font-weight:500;margin:0;text-wrap:balance;line-height:1.25}
+h3{font-size:16px;margin:0 0 10px;font-weight:800}
+.by{font-family:var(--book);font-style:italic;color:var(--mute);font-size:14px;margin:1px 0 2px}
+.mute{color:var(--mute);font-size:14px;margin:2px 0}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:10px}
+input,button,select,textarea{font:inherit;color:var(--ink)}
+input,select,textarea{background:var(--field);border:1px solid var(--line);border-radius:12px;padding:10px;min-width:0}
+textarea{width:100%;resize:vertical;min-height:60px}
+input.n{width:96px}input.grow,select.grow{flex:1}
+button{background:var(--ink);color:var(--bg);border:0;border-radius:12px;padding:10px 14px;font-weight:600;cursor:pointer}
+button.q{background:var(--sky);color:var(--sky-ink);padding:9px 13px}
+button.sun{background:var(--sun);color:var(--sun-ink)}
+button.ghost{background:transparent;color:var(--mute);border:1px solid var(--line)}
+button.danger{background:var(--bad-bg);color:var(--bad)}
+button:disabled{opacity:.5;cursor:default}
+button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible,.scan:focus-within{outline:3px solid var(--sun);outline-offset:2px}
+details{margin-top:10px}summary{cursor:pointer;color:var(--mute);font-size:14px}
+.set{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}.set label{font-size:13px;color:var(--mute);display:grid;gap:4px;min-width:0}.set input,.set select{width:100%}
+.set .full{grid-column:1/-1}
+.chip{display:inline-block;font-size:12px;font-weight:600;padding:3px 10px;border-radius:20px;background:var(--line);color:var(--ink)}
+.chip.ok{background:var(--ok-bg);color:var(--ok)}.chip.bad{background:var(--bad-bg);color:var(--bad)}.chip.win{background:var(--sun);color:var(--sun-ink)}
+.scan{display:flex;align-items:center;gap:14px;padding:16px;border-radius:16px;background:var(--hero);color:var(--hero-ink);cursor:pointer}
+.scan input{position:absolute;width:1px;height:1px;opacity:0}
+.scan .bars{width:54px;height:40px;flex:none;background:repeating-linear-gradient(90deg,var(--hero-ink) 0 2px,transparent 2px 4px,var(--hero-ink) 4px 5px,transparent 5px 8px,var(--hero-ink) 8px 11px,transparent 11px 12px);border-radius:3px;opacity:.9}
+.scan b{display:block;font-size:17px}.scan span{font-size:13px;opacity:.75}
+.status{margin-top:10px;font-size:14px;min-height:20px;color:var(--mute)}
+.status.ok{color:var(--ok)}.status.bad{color:var(--bad)}
+.or{display:flex;align-items:center;gap:10px;color:var(--mute);font-size:13px;margin:14px 0 4px}.or::before,.or::after{content:"";flex:1;height:1px;background:var(--line)}
+.seg{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+.seg button{background:var(--card);color:var(--mute);border:1px solid var(--line);padding:7px 12px;font-size:14px}
+.seg button[aria-pressed="true"]{background:var(--sun);color:var(--sun-ink);border-color:var(--sun)}
+.stars{display:flex;gap:2px}.stars button{background:none;color:var(--line);padding:2px 3px;font-size:22px;line-height:1}
+.stars button.on{color:var(--sun)}.stars button.half{color:var(--sun);opacity:.55}
+.moods{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}.moods button{background:var(--field);color:var(--mute);border:1px solid var(--line);padding:5px 10px;font-size:13px;border-radius:20px}
+.moods button[aria-pressed="true"]{background:var(--sky);color:var(--sky-ink);border-color:var(--sky)}
+.quote{border-left:3px solid var(--sun);padding:4px 0 4px 12px;margin:10px 0;font-family:var(--book);font-style:italic}
+.quote small{display:block;font-family:var(--display);font-style:normal;color:var(--mute);font-size:12px}
+.tiles{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+.tile{background:var(--field);border-radius:14px;padding:12px}.tile b{display:block;font-size:24px;font-weight:800;font-variant-numeric:tabular-nums}.tile span{font-size:13px;color:var(--mute)}
+.bars{font-variant-numeric:tabular-nums}
+.chart{display:flex;align-items:flex-end;gap:6px;height:110px;margin-top:6px}
+.chart div{flex:1;text-align:center;font-size:11px;color:var(--mute);min-width:0}
+.chart i{display:block;background:var(--sky);border-radius:6px 6px 2px 2px;min-height:3px;margin-bottom:4px}
+.chart .t i{background:var(--sun)}
+.goalrow{display:flex;gap:16px;align-items:center;flex-wrap:wrap}
+.goalrow .mini{width:90px;height:90px}.goalrow .mini b{font-size:18px}
+.badges{display:flex;gap:8px;flex-wrap:wrap}.badge{padding:6px 12px;border-radius:20px;font-size:13px;font-weight:600;background:var(--line);color:var(--mute)}
+.badge.on{background:var(--sun);color:var(--sun-ink)}
+.log{border-top:1px solid var(--line);padding:10px 0}
+.empty h2{font-family:var(--display);font-weight:800}
+.cov{width:64px;aspect-ratio:2/3;border-radius:5px;object-fit:cover;flex:none;display:block;box-shadow:0 2px 6px rgba(0,0,0,.18);max-width:100%}
+.cov.ph{display:grid;place-items:center;color:#fff;font-family:var(--book);font-size:20px;font-weight:500}
+.bar{height:6px;border-radius:6px;background:var(--line);margin-top:6px;overflow:hidden}.bar i{display:block;height:100%;border-radius:6px}
+.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px 12px;margin-bottom:14px}
+.tileb{background:none;color:var(--ink);padding:0;border-radius:8px;text-align:left;font-weight:600;font-size:13px;line-height:1.3}
+.tileb .cov{width:100%;margin-bottom:6px}.tileb span{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tileb small{display:block;color:var(--sun);font-size:12px;min-height:16px}
+.tileb[aria-current="true"] .cov{outline:3px solid var(--sun);outline-offset:2px}
+.covbtn{background:none;padding:0;border-radius:5px;flex:none}
+.info{margin-top:12px;border-top:1px solid var(--line);padding-top:12px;display:grid;gap:12px}
+.info h4{margin:0 0 6px;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--mute)}
+.gr{font-weight:600}.gr b{color:var(--sun);font-size:18px}
+.rv{display:grid;gap:8px}.rv p{margin:0;font-size:14px;padding:8px 10px;background:var(--field);border-radius:10px}.rv em{font-style:normal;color:var(--sun);font-weight:700;margin-right:6px;white-space:nowrap}
+.links{display:flex;gap:8px;flex-wrap:wrap}.links a{display:inline-block;padding:7px 12px;border-radius:10px;border:1px solid var(--line);color:var(--ink);text-decoration:none;font-weight:600;font-size:14px}
+.links a.nuria{background:var(--sky);color:var(--sky-ink);border-color:var(--sky)}
+.sugg{display:grid;gap:6px}.sugg div{display:flex;gap:8px;align-items:center;justify-content:space-between;font-size:14px}.sugg span{min-width:0}.sugg small{color:var(--mute)}
+.sugg button{padding:5px 10px;font-size:12px;flex:none;background:transparent;color:var(--ink);border:1px solid var(--line)}
+.sugg button:disabled{border-color:transparent;color:var(--mute)}
+.pager{display:flex;align-items:stretch;gap:8px;margin-top:12px}
+.pm{flex:none;width:58px;font-size:26px;line-height:1;padding:0;background:var(--field);color:var(--ink);border:1px solid var(--line);border-radius:14px}
+.pm.plus{width:76px;font-size:22px;font-weight:800;background:var(--sky);color:var(--sky-ink);border-color:var(--sky)}
+.pnow{flex:1;min-width:0;display:grid;justify-items:center;background:var(--field);border:1px solid var(--line);border-radius:14px;padding:6px 8px;font-size:12px;color:var(--mute)}
+.pnow input{border:0;background:transparent;text-align:center;font-size:30px;font-weight:800;padding:0;width:100%;font-variant-numeric:tabular-nums;color:var(--ink)}
+.pnow small{font-size:12px}
+#toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translate(-50%,140px);background:var(--ink);color:var(--bg);padding:12px 18px;border-radius:14px;font-weight:600;transition:transform .3s;z-index:9;max-width:90%}
+#toast.show{transform:translate(-50%,0)}
+#cv{position:fixed;inset:0;pointer-events:none;z-index:8}
+@media (prefers-reduced-motion:reduce){#toast{transition:none}}
+@media (max-width:400px){.set{grid-template-columns:1fr}.tabs button{font-size:13px}}
+/* --- app additions: live scanner, search results, calendar, tags, install/update bars --- */
+.scanbtns{display:grid;grid-template-columns:1fr;gap:10px}
+.scan.alt{background:var(--field);color:var(--ink);border:1px solid var(--line)}
+.scan.alt .bars{background:none;font-size:30px;display:grid;place-items:center;opacity:1}
+#cam{position:fixed;inset:0;z-index:20;background:#000;display:flex;flex-direction:column}
+#cam video{flex:1;min-height:0;width:100%;object-fit:cover}
+#cam .frame{position:absolute;left:10%;right:10%;top:38%;height:22%;border:3px solid var(--sun);border-radius:16px;box-shadow:0 0 0 100vmax rgba(0,0,0,.45);pointer-events:none}
+#cam .frame::after{content:"";position:absolute;left:6%;right:6%;top:50%;height:2px;background:#e5645a;animation:scanl 1.6s ease-in-out infinite alternate}
+@keyframes scanl{from{transform:translateY(-35px)}to{transform:translateY(35px)}}
+@media (prefers-reduced-motion:reduce){#cam .frame::after{animation:none}}
+#cam .camtop{position:absolute;top:calc(14px + env(safe-area-inset-top,0px));left:16px;right:16px;color:#fff;text-align:center;font-weight:600;text-shadow:0 1px 4px #000}
+#cam .cambot{position:absolute;bottom:calc(24px + env(safe-area-inset-bottom,0px));left:16px;right:16px;display:flex;gap:10px;justify-content:center}
+.results{display:grid;gap:8px;margin-top:10px}
+.res{display:flex;gap:10px;align-items:center;background:var(--field);border:1px solid var(--line);border-radius:14px;padding:8px;text-align:left;color:var(--ink);font-weight:500;width:100%}
+.res img,.res .ph{width:40px;height:60px;border-radius:4px;object-fit:cover;flex:none;background:var(--line)}
+.res span{min-width:0;flex:1}.res small{display:block;color:var(--mute);font-size:12px}
+.cal{display:grid;grid-auto-flow:column;grid-template-rows:repeat(7,1fr);gap:3px;overflow-x:auto;padding-bottom:4px}
+.cal i{width:13px;height:13px;border-radius:3px;background:var(--line);display:block}
+.cal i.l1{background:color-mix(in srgb,var(--sky) 35%,var(--line))}.cal i.l2{background:color-mix(in srgb,var(--sky) 65%,var(--line))}.cal i.l3{background:var(--sky)}.cal i.l4{background:var(--sun)}
+.cal i.fut{visibility:hidden}
+.legend{display:flex;gap:4px;align-items:center;font-size:12px;color:var(--mute);margin-top:6px}.legend i{width:11px;height:11px;border-radius:3px;display:inline-block;background:var(--line)}
+.tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.tag{font-size:12px;font-weight:600;padding:3px 10px;border-radius:20px;background:var(--field);border:1px solid var(--line);color:var(--ink)}
+.tag button{background:none;color:var(--mute);padding:0 0 0 6px;font-size:13px}
+.seg.tagseg button{font-size:13px;padding:5px 10px}
+.appbar{position:fixed;left:16px;right:16px;bottom:calc(16px + env(safe-area-inset-bottom,0px));z-index:12;max-width:528px;margin:0 auto;background:var(--card);border:1px solid var(--sun);border-radius:16px;padding:12px 14px;display:flex;gap:10px;align-items:center;box-shadow:0 6px 24px rgba(0,0,0,.2)}
+.appbar span{flex:1;min-width:0;font-weight:600;font-size:14px}
+.wrap{border-radius:18px;background:var(--hero);color:var(--hero-ink);padding:16px}
+.wrap .tiles .tile{background:rgba(255,255,255,.1)}.wrap .tiles .tile span{color:inherit;opacity:.75}
+.note{background:var(--ok-bg);color:var(--ok);border-radius:14px;padding:10px 14px;font-size:14px;margin-bottom:14px}
+.note.warn{background:var(--bad-bg);color:var(--bad)}
+</style>
+</head>
+<body>
+<main>
+<canvas id="cv"></canvas><input type="file" id="coverpick" accept="image/*" hidden><div id="toast" role="status"></div>
+<div class="hero">
+  <h1 id="hi">Good day</h1><p id="date"></p>
+  <div class="top"><div class="ring" id="ring"></div><div><div id="streak"></div><div class="dots" id="dots"></div></div></div>
+  <div class="count" id="count"></div>
+  <div id="timerbar"></div>
+  <div class="row"><button class="ghost" id="nb" style="color:var(--hero-ink);border-color:rgba(255,255,255,.3)" hidden>Turn on reminders</button></div>
+</div>
+
+<nav class="tabs" role="tablist">
+  <button role="tab" id="t-today" aria-selected="true" data-tab="today">Today</button>
+  <button role="tab" id="t-add" aria-selected="false" data-tab="add">Add book</button>
+  <button role="tab" id="t-shelves" aria-selected="false" data-tab="shelves">Shelves</button>
+  <button role="tab" id="t-stats" aria-selected="false" data-tab="stats">Stats</button>
+</nav>
+
+<section id="p-today"><div id="nudge"></div><div id="books"></div></section>
+
+<section id="p-add" hidden>
+  <div class="card"><div class="in">
+    <div class="scanbtns">
+      <button class="scan" id="livescan" type="button" style="text-align:left;font-weight:400"><span class="bars" aria-hidden="true"></span><span><b>Scan the barcode</b><span>Point your camera at the barcode on the back cover</span></span></button>
+      <label class="scan alt" for="photo"><span class="bars" aria-hidden="true">📷</span><span><b>Use a photo instead</b><span>Snap or pick a close photo of the barcode</span></span><input id="photo" type="file" accept="image/*"></label>
+    </div>
+    <div class="or">or type the ISBN</div>
+    <div class="row" style="margin-top:0"><input class="grow" id="isbn" inputmode="numeric" placeholder="978…" autocomplete="off"><button id="lookup">Look up</button></div>
+    <div class="or">or search by title</div>
+    <div class="row" style="margin-top:0"><input class="grow" id="q" type="search" placeholder="Title or author" autocomplete="off" enterkeyhint="search"><button id="searchbtn">Search</button></div>
+    <div class="status" id="st" aria-live="polite"></div>
+    <div class="results" id="results"></div>
+  </div></div>
+  <div class="card"><div class="in">
+    <h3>Book details</h3>
+    <div class="set">
+      <label class="full">Title<input id="f-title" placeholder="e.g. Atomic Habits"></label>
+      <label class="full">Author<input id="f-author" placeholder="Author"></label>
+      <label>Pages<input id="f-pages" type="number" min="1" inputmode="numeric"></label>
+      <label>Format<select id="f-format"><option>Paper</option><option>Ebook</option><option>Audiobook</option></select></label>
+      <label>Shelf<select id="f-shelf"><option value="reading">Reading now</option><option value="want">Want to read</option><option value="done">Already finished</option></select></label>
+      <label>Finish by (optional)<input id="f-deadline" type="date"></label>
+      <label class="full" id="f-coverwrap">Cover photo (optional)<input id="f-cover" type="file" accept="image/*"></label>
+      <label class="full">Tags (optional, comma separated)<input id="f-tags" placeholder="e.g. money, borrowed, book club"></label>
+    </div>
+    <div id="f-covprev" class="row" hidden></div>
+    <div class="row"><button class="sun" id="addbtn">Add to my shelf</button><button class="ghost" id="clearbtn">Clear</button></div>
+    <p class="mute">A finish-by date gives you a daily page target.</p>
+  </div></div>
+</section>
+
+<section id="p-shelves" hidden>
+  <div class="seg" id="shelfseg"></div>
+  <div class="seg tagseg" id="tagseg"></div>
+  <div id="shelf"></div>
+</section>
+
+<section id="p-stats" hidden>
+  <div class="card"><div class="in"><h3 id="yh">Reading challenge</h3><div id="goal"></div></div></div>
+  <div class="card"><div class="in"><h3 id="wraph">Your year in books</h3><div id="wrap"></div></div></div>
+  <div class="card"><div class="in"><h3>This year</h3><div class="tiles" id="tiles"></div></div></div>
+  <div class="card"><div class="in"><h3>Reading calendar</h3><div class="cal" id="cal" role="img"></div><div class="legend">Less <i></i><i class="l1" style="background:color-mix(in srgb,var(--sky) 35%,var(--line))"></i><i style="background:color-mix(in srgb,var(--sky) 65%,var(--line))"></i><i style="background:var(--sky)"></i><i style="background:var(--sun)"></i> More</div><p class="mute" id="calnote"></p></div></div>
+  <div class="card"><div class="in"><h3>Pages by month</h3><div class="chart" id="months"></div></div></div>
+  <div class="card"><div class="in"><h3>Pages this week</h3><div class="chart" id="week"></div></div></div>
+  <div class="card"><div class="in"><h3>Badges</h3><div class="badges" id="badges"></div></div></div>
+  <div class="card"><div class="in"><h3>Reading log</h3><div id="log"></div></div></div>
+  <div class="card"><div class="in"><h3>Settings</h3>
+    <div class="set">
+      <label>Daily goal<select id="gm"><option value="auto">Automatic (from deadlines)</option><option value="pages">Pages a day</option><option value="minutes">Minutes a day</option></select></label>
+      <label id="gvwrap">Target<input type="number" id="gv" min="1" inputmode="numeric"></label>
+      <label>Reading window starts<input type="time" id="ws"></label><label>Window ends<input type="time" id="we"></label>
+      <label class="full">Theme<select id="theme"><option value="">Match my phone</option><option value="light">Light</option><option value="dark">Dark</option></select></label>
+    </div>
+    <p class="mute">Pace is learned from sessions with minutes (the timer does this for you). Until then it assumes 1 page every 2 minutes.</p>
+  </div></div>
+  <div class="card"><div class="in"><h3>Your data</h3>
+    <p class="mute" id="sync" style="margin-top:0">Saved on this phone.</p>
+    <div class="row"><button class="sun" id="backupbtn">Save a backup file</button><label class="ghost" style="display:inline-block;padding:10px 14px;border-radius:12px;border:1px solid var(--line);font-weight:600;cursor:pointer;color:var(--mute)">Restore from backup<input type="file" id="restore" accept=".json,application/json" hidden></label></div>
+    <p class="mute">Your books live only on this phone, with no account. Save a backup now and then (to Google Drive, WhatsApp to yourself, or your Downloads) so you never lose them. Restoring a backup replaces what is here.</p>
+  </div></div>
+</section>
+</main>
+<div id="cam" hidden role="dialog" aria-modal="true" aria-label="Barcode scanner">
+  <video id="camv" playsinline muted></video>
+  <div class="frame" aria-hidden="true"></div>
+  <div class="camtop" id="camtxt">Line up the barcode inside the box</div>
+  <div class="cambot"><button class="ghost" id="camtorch" hidden style="color:#fff;border-color:rgba(255,255,255,.5)">Torch</button><button class="sun" id="camclose">Cancel</button></div>
+</div>
+<div class="appbar" id="installBar" hidden><span>Install Reading Tracker on your home screen</span><button class="ghost" id="installLater">Later</button><button class="sun" id="installBtn">Install</button></div>
+<div class="appbar" id="updateBar" hidden><span>Update available</span><button class="sun" id="updateBtn">Refresh</button></div>
+<script src="https://cdn.jsdelivr.net/npm/@zxing/library@0.21.3/umd/index.min.js"></script>
+<script>
+var KEY='reading-tracker-v2';
+var MOODS=['Inspiring','Informative','Funny','Hopeful','Emotional','Tense','Dark','Relaxing'];
+function ds(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
+function today(){return ds(new Date())}
+function defaults(){return{books:[],log:[],ws:'08:30',we:'10:00',best:0,note:'',yearGoal:12,timer:null,at:0,ver:4,gm:'auto',gv:20,theme:'',backedUp:''}}
+function normalize(s){
+  var d=defaults();s=Object.assign(d,s||{});
+  s.books=(s.books||[]).map(function(b){
+    var n=Object.assign({author:'',isbn:'',format:'Paper',rating:0,review:'',mood:'',quotes:[],added:'',finished:'',deadline:'',tags:[]},b);
+    if(n.cover&&n.cover.indexOf('/_blob/')===0)n.cover='';
+    if(!n.status)n.status=n.page>=n.total?'done':'reading';
+    return n});
+  return s}
+var S=defaults();
+try{var raw=localStorage.getItem(KEY);if(raw)S=normalize(JSON.parse(raw))}catch(e){}
+var openBook=null,tab='today',shelfView='want',tagView='',pendingDel=null,newCover='';
+
+/* ---------- saving: on this phone, with backup files ---------- */
+var saveFailed=false;
+function save(){S.at=Date.now();try{localStorage.setItem(KEY,JSON.stringify(S));saveFailed=false}catch(e){saveFailed=true;toast('Phone storage is full. Save a backup, then remove some cover photos.')}}
+function applyTheme(){var r=document.documentElement;if(S.theme)r.setAttribute('data-theme',S.theme);else r.removeAttribute('data-theme');
+  var dark=S.theme==='dark'||(!S.theme&&matchMedia('(prefers-color-scheme:dark)').matches);document.querySelector('meta[name=theme-color]').content=dark?'#232b52':'#1b2340'}
+var persisted=false;
+async function askPersist(){try{if(navigator.storage&&navigator.storage.persist){persisted=await navigator.storage.persisted();if(!persisted)persisted=await navigator.storage.persist()}}catch(e){}renderData()}
+function renderData(){var el=document.getElementById('sync');if(!el)return;
+  var n=S.books.length,last=S.backedUp;
+  el.textContent=(n?n+' book'+(n===1?'':'s')+' and '+S.log.length+' sessions saved on this phone. ':'Saved on this phone. ')+(persisted?'Protected from automatic clean-up. ':'')+(last?'Last backup: '+last+'.':'No backup saved yet.')}
+function stamp(){var d=new Date();return ds(d)}
+async function backup(){
+  var data=JSON.stringify({app:'chungalab-reading-tracker',v:1,exported:new Date().toISOString(),state:S});
+  var name='reading-backup-'+stamp()+'.json',file=null;
+  try{file=new File([data],name,{type:'application/json'})}catch(e){}
+  if(file&&navigator.canShare&&navigator.canShare({files:[file]})){
+    try{await navigator.share({files:[file],title:'Reading tracker backup'});S.backedUp=today();save();render();toast('Backup shared');return}catch(e){if(e&&e.name==='AbortError')return}}
+  var a=document.createElement('a');a.href=URL.createObjectURL(new Blob([data],{type:'application/json'}));a.download=name;document.body.appendChild(a);a.click();setTimeout(function(){URL.revokeObjectURL(a.href);a.remove()},1000);
+  S.backedUp=today();save();render();toast('Backup saved to your Downloads')}
+function readBackup(txt){var o=JSON.parse(txt);
+  if(o&&o.state&&typeof o.state==='string')o=JSON.parse(o.state);   /* old tracker export */
+  else if(o&&o.state&&typeof o.state==='object')o=o.state;          /* this app's backup */
+  if(!o||!Array.isArray(o.books))throw new Error('not a backup');return normalize(o)}
+document.getElementById('restore').addEventListener('change',async function(){
+  var f=this.files&&this.files[0];this.value='';if(!f)return;
+  try{var n=readBackup(await f.text());
+    if(S.books.length&&!confirm('Replace the '+S.books.length+' books on this phone with the '+n.books.length+' books in this backup?'))return;
+    S=n;S.backedUp=S.backedUp||today();save();applyTheme();render();toast('Restored '+S.books.length+' books');confetti()}
+  catch(e){toast('That file is not a reading tracker backup.')}});
+document.getElementById('backupbtn').onclick=backup;
+
+/* ---------- helpers ---------- */
+function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
+function pct(a,b){return b?Math.min(100,Math.round(a/b*100)):0}
+function daysLeft(d){return Math.max(1,Math.round((new Date(d+'T00:00')-new Date(today()+'T00:00'))/864e5)+1)}
+function mins(t){var p=String(t).split(':');return (+p[0])*60+(+p[1]||0)}
+function nowMin(){var n=new Date();return n.getHours()*60+n.getMinutes()}
+function pace(){var p=0,m=0;S.log.forEach(function(g){if(+g.m>0&&g.p>0){p+=g.p;m+=+g.m}});return m>=20?p/m:0.5}
+function hue(t){var h=0;for(var i=0;i<t.length;i++)h=(h*31+t.charCodeAt(i))%360;return h}
+function ringSvg(sz,sw,p,col,bg){var r=(sz-sw)/2,c=2*Math.PI*r;return '<svg width="'+sz+'" height="'+sz+'" aria-hidden="true"><circle cx="'+sz/2+'" cy="'+sz/2+'" r="'+r+'" fill="none" stroke="'+bg+'" stroke-width="'+sw+'"/><circle cx="'+sz/2+'" cy="'+sz/2+'" r="'+r+'" fill="none" stroke="'+col+'" stroke-width="'+sw+'" stroke-linecap="round" stroke-dasharray="'+c+'" stroke-dashoffset="'+c*(1-p/100)+'" style="transition:stroke-dashoffset .6s"/></svg>'}
+function dayPages(d){return S.log.filter(function(g){return g.d===d}).reduce(function(a,g){return a+g.p},0)}
+function bookToday(id){return S.log.filter(function(g){return g.d===today()&&g.b===id}).reduce(function(a,g){return a+g.p},0)}
+function streak(){var n=0,d=new Date();if(!S.log.some(function(g){return g.d===ds(d)}))d.setDate(d.getDate()-1);while(S.log.some(function(g){return g.d===ds(d)})){n++;d.setDate(d.getDate()-1)}return n}
+function reading(){return S.books.filter(function(b){return b.status==='reading'})}
+function goal(){var act=reading(),need=0;act.forEach(function(b){if(b.deadline&&b.page<b.total)need+=Math.ceil((b.total-b.page)/daysLeft(b.deadline))});var cap=Math.round(Math.max(0,mins(S.we)-mins(S.ws))*pace());
+  var unit='pages',g=need||cap||10;if(S.gm==='pages')g=Math.max(1,+S.gv||20);if(S.gm==='minutes'){unit='min';g=Math.max(1,+S.gv||20)}
+  return{need:need,cap:cap,g:g,unit:unit,act:act}}
+function dayMins(d){return S.log.filter(function(g){return g.d===d}).reduce(function(a,g){return a+(+g.m||0)},0)}
+function prog(){if(S.gm!=='minutes')return dayPages(today());var m=dayMins(today());if(S.timer)m+=Math.floor((Date.now()-S.timer.start)/60000);return m}
+function byId(id){return S.books.filter(function(b){return b.id===id})[0]}
+function toast(m){var t=document.getElementById('toast');t.textContent=m;t.className='show';clearTimeout(toast.h);toast.h=setTimeout(function(){t.className=''},3200)}
+function confetti(){if(matchMedia('(prefers-reduced-motion:reduce)').matches)return;var c=document.getElementById('cv'),x=c.getContext('2d');c.width=innerWidth;c.height=innerHeight;var P=[],cols=['#f5b942','#3fb6a8','#e5645a','#8f9cf5'];for(var i=0;i<90;i++)P.push({x:innerWidth/2,y:innerHeight*.35,vx:(Math.random()-.5)*12,vy:Math.random()*-11-2,c:cols[i%4],s:5+Math.random()*5});var f=0;(function a(){x.clearRect(0,0,c.width,c.height);P.forEach(function(p){p.x+=p.vx;p.y+=p.vy;p.vy+=.35;x.fillStyle=p.c;x.fillRect(p.x,p.y,p.s,p.s)});if(++f<90)requestAnimationFrame(a);else x.clearRect(0,0,c.width,c.height)})()}
+function year(){return String(new Date().getFullYear())}
+function finishedThisYear(){return S.books.filter(function(b){return b.status==='done'&&String(b.finished).slice(0,4)===year()})}
+
+/* ---------- ISBN ---------- */
+function isbn13ok(s){if(!/^97[89]\d{10}$/.test(s))return false;var t=0;for(var i=0;i<12;i++)t+=(+s[i])*(i%2?3:1);return (10-t%10)%10===+s[12]}
+function isbn10to13(s){if(!/^\d{9}[\dX]$/.test(s))return null;var t=0;for(var i=0;i<10;i++)t+=(s[i]==='X'?10:+s[i])*(10-i);if(t%11)return null;var b='978'+s.slice(0,9),u=0;for(i=0;i<12;i++)u+=(+b[i])*(i%2?3:1);return b+((10-u%10)%10)}
+function cleanIsbn(v){var s=String(v).toUpperCase().replace(/[^0-9X]/g,'');if(s.length===13&&isbn13ok(s))return s;if(s.length===10)return isbn10to13(s);return null}
+
+/* ---------- barcode from a photo ---------- */
+function drawScaled(bmp,maxSide,rot){var w=bmp.width,h=bmp.height,k=Math.min(1,maxSide/Math.max(w,h));w=Math.round(w*k);h=Math.round(h*k);var c=document.createElement('canvas');c.width=rot?h:w;c.height=rot?w:h;var x=c.getContext('2d',{willReadFrequently:true});if(rot){x.translate(h,0);x.rotate(Math.PI/2)}x.drawImage(bmp,0,0,w,h);return c}
+function zxDecode(c){
+  var Z=window.ZXing;if(!Z)return null;
+  var d=c.getContext('2d').getImageData(0,0,c.width,c.height).data,lum=new Uint8ClampedArray(c.width*c.height);
+  for(var i=0,j=0;j<lum.length;i+=4,j++)lum[j]=(d[i]*299+d[i+1]*587+d[i+2]*114)/1000;
+  var hints=new Map();hints.set(Z.DecodeHintType.POSSIBLE_FORMATS,[Z.BarcodeFormat.EAN_13,Z.BarcodeFormat.EAN_8,Z.BarcodeFormat.UPC_A]);hints.set(Z.DecodeHintType.TRY_HARDER,true);
+  try{var r=new Z.MultiFormatReader();r.setHints(hints);return r.decode(new Z.BinaryBitmap(new Z.HybridBinarizer(new Z.RGBLuminanceSource(lum,c.width,c.height))),hints).getText()}catch(e){return null}}
+async function readBarcode(file){
+  var bmp=await createImageBitmap(file);
+  if('BarcodeDetector' in window){try{var det=new BarcodeDetector({formats:['ean_13','ean_8','upc_a']});var found=await det.detect(bmp);if(found.length)return found[0].rawValue}catch(e){}}
+  var tries=[[1600,0],[1000,0],[700,0],[1200,1]];
+  for(var i=0;i<tries.length;i++){var v=zxDecode(drawScaled(bmp,tries[i][0],tries[i][1]));if(v)return v;await new Promise(function(r){setTimeout(r,0)})}
+  return null}
+function status(t,k){var s=document.getElementById('st');s.textContent=t;s.className='status'+(k?' '+k:'')}
+var lastPhoto=null;
+document.getElementById('photo').addEventListener('change',async function(){
+  var f=this.files&&this.files[0];this.value='';if(!f)return;
+  status('Reading the barcode…');
+  var code=null;try{code=await readBarcode(f)}catch(e){}
+  if(!code){status('No barcode found in that photo. Try again closer, in good light, with the barcode flat and filling most of the frame. Or type the ISBN below it.','bad');return}
+  var isbn=cleanIsbn(code);
+  if(!isbn){status('That barcode ('+code+') is not a book ISBN. Book barcodes start with 978 or 979.','bad');return}
+  document.getElementById('isbn').value=isbn;lastPhoto=f;S.scanned=(S.scanned||0)+1;lookup(isbn)});
+document.getElementById('lookup').onclick=function(){var v=document.getElementById('isbn').value,isbn=cleanIsbn(v);if(!isbn){status('That is not a valid ISBN. Check the 10 or 13 digits printed under the barcode.','bad');return}document.getElementById('isbn').value=isbn;lookup(isbn)};
+
+/* ---------- live camera scanner ---------- */
+var camStream=null,camLoop=null,camDet=null;
+async function openCam(){
+  if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){toast('Live scanning is not available here. Use a photo instead.');document.getElementById('photo').click();return}
+  var cam=document.getElementById('cam'),v=document.getElementById('camv');
+  try{camStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'},width:{ideal:1280},height:{ideal:720}},audio:false})}
+  catch(e){toast(e&&e.name==='NotAllowedError'?'Camera blocked. Allow it in Chrome site settings, or use a photo.':'Could not open the camera. Use a photo instead.');return}
+  v.srcObject=camStream;cam.hidden=false;document.getElementById('camtxt').textContent='Line up the barcode inside the box';
+  try{await v.play()}catch(e){}
+  var track=camStream.getVideoTracks()[0],caps=track.getCapabilities?track.getCapabilities():{};
+  var tb=document.getElementById('camtorch');tb.hidden=!caps.torch;tb.dataset.on='';
+  camDet=null;if('BarcodeDetector' in window){try{var fm=await BarcodeDetector.getSupportedFormats();if(fm.indexOf('ean_13')>=0)camDet=new BarcodeDetector({formats:['ean_13','ean_8','upc_a']})}catch(e){}}
+  var cv=document.createElement('canvas'),busy=false,misses=0;
+  camLoop=setInterval(async function(){
+    if(busy||!v.videoWidth)return;busy=true;var code=null;
+    try{if(camDet){var r=await camDet.detect(v);if(r.length)code=r[0].rawValue}
+      else{var w=v.videoWidth,h=v.videoHeight,cw=Math.min(1000,w),k=cw/w;cv.width=cw;cv.height=Math.round(h*k*.4);var x=cv.getContext('2d',{willReadFrequently:true});x.drawImage(v,0,h*.3,w,h*.4,0,0,cv.width,cv.height);code=zxDecode(cv)}}catch(e){}
+    busy=false;
+    if(code){var isbn=cleanIsbn(code);
+      if(isbn){if(navigator.vibrate)navigator.vibrate(80);closeCam();document.getElementById('isbn').value=isbn;S.scanned=(S.scanned||0)+1;lookup(isbn)}
+      else document.getElementById('camtxt').textContent='That barcode is not a book ISBN (they start with 978 or 979). Try the one on the back cover.'}
+    else if(++misses===40)document.getElementById('camtxt').textContent='Hold steady, about 15 cm away, in good light.'},camDet?200:350)}
+function closeCam(){clearInterval(camLoop);camLoop=null;if(camStream){camStream.getTracks().forEach(function(t){t.stop()})}camStream=null;document.getElementById('cam').hidden=true}
+document.getElementById('livescan').onclick=openCam;
+document.getElementById('camclose').onclick=closeCam;
+document.getElementById('camtorch').onclick=function(){if(!camStream)return;var t=camStream.getVideoTracks()[0],on=!this.dataset.on;t.applyConstraints({advanced:[{torch:on}]}).then(()=>{this.dataset.on=on?'1':''}).catch(function(){})};
+document.addEventListener('keydown',function(e){if(e.key==='Escape'&&camStream)closeCam()});
+
+/* ---------- book lookup: Open Library, then Google Books ---------- */
+function timeoutFetch(url,ms){var c=new AbortController(),t=setTimeout(function(){c.abort()},ms||9000);return fetch(url,{signal:c.signal}).finally(function(){clearTimeout(t)})}
+async function olIsbn(isbn){
+  var r=await timeoutFetch('https://openlibrary.org/api/books?bibkeys=ISBN:'+isbn+'&format=json&jscmd=data');if(!r.ok)return null;var j=await r.json(),d=j['ISBN:'+isbn];if(!d)return null;
+  return{title:d.title+(d.subtitle&&d.title.length<40?': '+d.subtitle:''),author:(d.authors||[]).map(function(a){return a.name}).join(', '),pages:d.number_of_pages||null,cover:d.cover?(d.cover.medium||d.cover.large||''):''}}
+async function gbIsbn(isbn){
+  var r=await timeoutFetch('https://www.googleapis.com/books/v1/volumes?q=isbn:'+isbn);if(!r.ok)return null;var j=await r.json(),v=j.items&&j.items[0]&&j.items[0].volumeInfo;if(!v)return null;
+  var img=v.imageLinks&&(v.imageLinks.thumbnail||v.imageLinks.smallThumbnail)||'';
+  return{title:v.title+(v.subtitle&&v.title.length<40?': '+v.subtitle:''),author:(v.authors||[]).join(', '),pages:v.pageCount||null,cover:img.replace('http://','https://')}}
+function fillForm(r){
+  document.getElementById('f-title').value=r.title||'';document.getElementById('f-author').value=r.author||'';
+  if(r.pages)document.getElementById('f-pages').value=Math.round(r.pages);
+  newCover=r.cover||'';var pv=document.getElementById('f-covprev');
+  pv.hidden=!newCover;pv.innerHTML=newCover?'<img class="cov" src="'+esc(newCover)+'" alt="" style="width:56px"><span class="mute">Cover found. You can still add your own photo above.</span>':''}
+async function lookup(isbn){
+  var dup=S.books.filter(function(b){return b.isbn===isbn})[0];
+  if(dup){status('"'+dup.title+'" is already on your shelf.','bad');return}
+  if(!navigator.onLine){status('Got ISBN '+isbn+'. You are offline, so type the title and pages below.','ok');document.getElementById('f-title').focus();return}
+  status('Got ISBN '+isbn+'. Looking up the book…');document.getElementById('lookup').disabled=true;
+  var r=null,r2=null;
+  try{r=await olIsbn(isbn)}catch(e){}
+  if(!r||!r.pages||!r.cover){try{r2=await gbIsbn(isbn)}catch(e){}}
+  if(r&&r2){r.pages=r.pages||r2.pages;r.cover=r.cover||r2.cover;r.author=r.author||r2.author}else if(!r)r=r2;
+  document.getElementById('lookup').disabled=false;
+  if(r&&r.title){fillForm(r);status('Found it. Check the details, especially the page count for your edition, then add it.','ok');document.getElementById('f-title').scrollIntoView({block:'center',behavior:'smooth'})}
+  else{status('Could not find ISBN '+isbn+' in the book databases. Type the title and pages below; the ISBN is saved with the book.','bad');document.getElementById('f-title').focus()}}
+var RES=[];
+async function search(){
+  var q=document.getElementById('q').value.trim();if(!q)return;
+  if(!navigator.onLine){status('You are offline. Type the book details below instead.','bad');return}
+  status('Searching…');document.getElementById('results').innerHTML='';
+  try{var r=await timeoutFetch('https://openlibrary.org/search.json?q='+encodeURIComponent(q)+'&limit=8&fields=title,author_name,number_of_pages_median,cover_i,isbn,first_publish_year');var j=await r.json();
+    RES=(j.docs||[]).map(function(d){return{title:d.title,author:(d.author_name||[]).slice(0,2).join(', '),pages:d.number_of_pages_median||null,cover:d.cover_i?'https://covers.openlibrary.org/b/id/'+d.cover_i+'-M.jpg':'',isbn:((d.isbn||[]).filter(function(x){return x.length===13})[0])||'',year:d.first_publish_year||''}})}
+  catch(e){RES=[]}
+  if(!RES.length){status('No matches. Check the spelling, or type the details below.','bad');return}
+  status('Tap your book to fill in the details.','ok');
+  document.getElementById('results').innerHTML=RES.map(function(x,i){return '<button class="res" onclick="pickRes('+i+')">'+(x.cover?'<img src="'+esc(x.cover.replace('-M.','-S.'))+'" alt="" loading="lazy">':'<i class="ph"></i>')+'<span>'+esc(x.title)+'<small>'+esc([x.author,x.year,x.pages?x.pages+' pages':''].filter(Boolean).join(' · '))+'</small></span></button>'}).join('')}
+function pickRes(i){var x=RES[i];if(!x)return;document.getElementById('results').innerHTML='';document.getElementById('isbn').value=x.isbn||'';fillForm(x);status('Check the details, especially the page count for your edition, then add it.','ok');document.getElementById('f-title').scrollIntoView({block:'center',behavior:'smooth'})}
+document.getElementById('searchbtn').onclick=search;
+document.getElementById('q').addEventListener('keydown',function(e){if(e.key==='Enter')search()});
+
+function clearForm(){['isbn','q','f-title','f-author','f-pages','f-deadline','f-cover','f-tags'].forEach(function(i){document.getElementById(i).value=''});document.getElementById('f-shelf').value='reading';document.getElementById('f-format').value='Paper';status('');lastPhoto=null;newCover='';document.getElementById('f-covprev').hidden=true;document.getElementById('results').innerHTML=''}
+document.getElementById('clearbtn').onclick=clearForm;
+function parseTags(v){return String(v||'').split(',').map(function(t){return t.trim().toLowerCase()}).filter(Boolean).filter(function(t,i,a){return a.indexOf(t)===i}).slice(0,8)}
+document.getElementById('addbtn').onclick=function(){
+  var t=document.getElementById('f-title').value.trim(),p=+document.getElementById('f-pages').value,sh=document.getElementById('f-shelf').value;
+  if(!t||(!p&&sh==='reading')){toast(t?'Add the page count so I can track your progress':'Add a title first');return}
+  var isbn=cleanIsbn(document.getElementById('isbn').value)||'';
+  S.books.push({id:Date.now(),title:t,author:document.getElementById('f-author').value.trim(),isbn:isbn,total:p||0,page:sh==='done'?(p||0):0,deadline:document.getElementById('f-deadline').value,status:sh,format:document.getElementById('f-format').value,rating:0,review:'',mood:'',quotes:[],added:today(),finished:sh==='done'?today():'',cover:newCover,tags:parseTags(document.getElementById('f-tags').value)});
+  var cf=document.getElementById('f-cover').files[0],nid=S.books[S.books.length-1].id;
+  save();clearForm();if(cf)uploadCover(nid,cf);toast('Added "'+t+'"');go(sh==='reading'?'today':'shelves',sh==='reading'?null:sh)};
+
+/* ---------- actions ---------- */
+function after(bk,before){var G=goal(),st=streak();S.best=Math.max(S.best,st);if(S.gm==='minutes'){before=bfMin;}var t=prog();
+  if(bk.page>=bk.total&&bk.status==='reading'){bk.status='done';bk.finished=today();save();render();toast('Finished "'+bk.title+'"! Rate it on the Finished shelf.');confetti();return}
+  save();render();if(before<G.g&&t>=G.g){toast('Daily goal reached!');confetti()}else toast('Saved. Keep going.')}
+/* live page tracking: every tap/edit updates the current page and today's running entry for that book */
+function qEntry(id){var e=S.log.filter(function(g){return g.d===today()&&g.b===id&&g.q})[0];if(!e){e={b:id,p:0,m:'',t:'',d:today(),q:1};S.log.push(e)}return e}
+function setPage(id,v){var b=byId(id);if(!b)return;v=Math.max(0,Math.min(Math.round(+v)||0,b.total));var d=v-b.page;if(!d){render();return}
+  var before=dayPages(today()),timing=S.timer&&S.timer.b===id;
+  if(!timing){var e=qEntry(id),dd=d<0?Math.max(d,-e.p):d;e.p+=dd;if(!e.p)S.log.splice(S.log.indexOf(e),1)}
+  b.page=v;S.best=Math.max(S.best,streak());
+  if(!timing&&b.page>=b.total&&b.status==='reading'){after(b,before);return}
+  save();render();var G=goal(),t=dayPages(today());
+  if(S.gm!=='minutes'&&before<G.g&&t>=G.g){toast('Daily goal reached!');confetti()}else if(Math.abs(d)>1)toast((d>0?'+':'')+d+' pages · now on page '+v)}
+function bump(id,n){var b=byId(id);if(b)setPage(id,b.page+n)}
+function quick(id,n){bump(id,n)}
+function addRead(id){var el=document.getElementById('ad'+id),n=Math.round(+el.value);if(!n||n<1){toast('Type how many pages you read');el.focus();return}bump(id,n)}
+var bfMin=0;
+function logIt(id){var b=byId(id),v=document.getElementById('pg'+id).value;if(v===''){toast('Enter the page you are on now');return}v=Math.min(+v,b.total);bfMin=prog();var before=dayPages(today()),p=Math.max(0,v-b.page);S.log.push({b:id,p:p,m:document.getElementById('mn'+id).value,t:document.getElementById('nt'+id).value.trim(),d:today()});b.page=v;after(b,before)}
+function startTimer(id){S.timer={b:id,start:Date.now(),p0:byId(id).page};save();render();toast('Timer started. It keeps counting even if you lock your phone.')}
+function cancelTimer(){var tm=S.timer,b=tm&&byId(tm.b);S.timer=null;if(b&&tm.p0!=null&&b.page>tm.p0){var e=qEntry(b.id);e.p+=b.page-tm.p0}save();render()}
+function stopTimer(){var tm=S.timer,b=tm&&byId(tm.b);if(!b){cancelTimer();return}var el=document.getElementById('tpage'),v=el&&el.value!==''?+el.value:b.page;
+  v=Math.max(0,Math.min(v,b.total));bfMin=dayMins(today());var p0=tm.p0!=null?tm.p0:b.page,m=Math.max(1,Math.round((Date.now()-tm.start)/60000)),before=dayPages(today()),p=Math.max(0,v-p0);
+  S.log.push({b:b.id,p:p,m:m,t:'',d:today()});b.page=v;S.timer=null;after(b,before)}
+function setField(id,k,v){var b=byId(id);b[k]=v;save();render()}
+function move(id,st){var b=byId(id);b.status=st;if(st==='done'){b.page=b.total;b.finished=today()}if(st==='reading'&&b.page>=b.total)b.page=0;save();render();toast(st==='reading'?'Moved to Reading now':st==='dnf'?'Moved to Did not finish':st==='want'?'Moved to Want to read':'Moved to Finished')}
+function askDel(id){pendingDel=id;render()}
+function delBook(id){S.books=S.books.filter(function(b){return b.id!==id});if(S.timer&&S.timer.b===id)S.timer=null;pendingDel=null;save();render();toast('Book removed. Its sessions stay in your log.')}
+function addQuote(id){var el=document.getElementById('qt'+id),pg=document.getElementById('qp'+id),t=el.value.trim();if(!t)return;byId(id).quotes.push({t:t,p:pg.value,d:today()});save();render();toast('Quote saved')}
+function delQuote(id,i){byId(id).quotes.splice(i,1);save();render()}
+
+/* ---------- covers ---------- */
+function covPh(b,w){return '<div class="cov ph" style="'+(w?'width:'+w+'px;':'')+'background:hsl('+hue(b.title)+',45%,42%)" aria-hidden="true">'+esc((b.title.replace(/[^A-Za-z0-9 ]/g,'').trim()[0]||'?').toUpperCase())+'</div>'}
+function cov(b,w){var st=w?' style="width:'+w+'px"':'';return b.cover?'<img class="cov" src="'+esc(b.cover)+'" alt="Cover of '+esc(b.title)+'" loading="lazy"'+st+' onerror="this.outerHTML=covPh(byId('+b.id+'),'+(w||0)+')">':covPh(b,w)}
+function tagsBlock(b){return '<div class="tags">'+(b.tags||[]).map(function(t,i){return '<span class="tag">#'+esc(t)+'<button aria-label="Remove tag '+esc(t)+'" onclick="delTag('+b.id+','+i+')">×</button></span>'}).join('')+'<input style="padding:4px 10px;font-size:13px;width:120px;border-radius:20px" placeholder="+ tag" aria-label="Add a tag to '+esc(b.title)+'" onkeydown="if(event.key===\'Enter\'){addTag('+b.id+',this.value)}" onchange="addTag('+b.id+',this.value)"></div>'}
+function addTag(id,v){var b=byId(id),t=parseTags(v);if(!b||!t.length)return;b.tags=parseTags((b.tags||[]).concat(t).join(','));save();render()}
+function delTag(id,i){var b=byId(id);b.tags.splice(i,1);if(tagView&&!S.books.some(function(x){return (x.tags||[]).indexOf(tagView)>=0}))tagView='';save();render()}
+function allTags(){var m={};S.books.forEach(function(b){(b.tags||[]).forEach(function(t){m[t]=(m[t]||0)+1})});return Object.keys(m).sort()}
+function covBtn(b,w){return '<button class="covbtn" title="'+(b.cover?'Change':'Add')+' cover photo" aria-label="'+(b.cover?'Change':'Add')+' cover photo for '+esc(b.title)+'" onclick="pickCover('+b.id+')">'+cov(b,w)+'</button>'}
+var coverFor=null;
+function pickCover(id){coverFor=id;document.getElementById('coverpick').click()}
+async function shrink(file){var bmp=await createImageBitmap(file),k=Math.min(1,300/bmp.width),c=document.createElement('canvas');c.width=Math.round(bmp.width*k);c.height=Math.round(bmp.height*k);c.getContext('2d').drawImage(bmp,0,0,c.width,c.height);return c.toDataURL('image/jpeg',.78)}
+async function uploadCover(id,file){if(!file)return;try{var url=await shrink(file);setField(id,'cover',url);toast('Cover saved')}catch(e){toast('Could not use that photo. Try another one.')}}
+document.getElementById('coverpick').addEventListener('change',function(){var f=this.files&&this.files[0];this.value='';if(f&&coverFor)uploadCover(coverFor,f)});
+
+/* ---------- reader reviews & suggestions ---------- */
+function onShelf(t){t=String(t).toLowerCase();return S.books.some(function(b){return b.title.toLowerCase()===t})}
+function wantIt(t,a){if(onShelf(t))return;S.books.push({id:Date.now(),title:t,author:a,isbn:'',total:0,page:0,deadline:'',status:'want',format:'Paper',rating:0,review:'',mood:'',quotes:[],added:today(),finished:''});save();render();toast('Added "'+t+'" to Want to read')}
+function suggList(arr){return '<div class="sugg">'+arr.map(function(x){var t=x[0],a=x[1]||'',has=onShelf(t);return '<div><span>'+esc(t)+(a?' <small>· '+esc(a)+'</small>':'')+(x[2]?' <small>★ '+esc(x[2])+'</small>':'')+'</span><button '+(has?'disabled':'')+' onclick="wantIt(\''+esc(t).replace(/\\/g,'').replace(/&#39;/g,'\\&#39;')+'\',\''+esc(a).replace(/&#39;/g,'\\&#39;')+'\')">'+(has?'On your shelf':'+ Want to read')+'</button></div>'}).join('')+'</div>'}
+function infoBlock(b){var f=b.info;if(!f)return '';var h='<details class="infod"><summary>What readers say · more books · where to buy</summary><div class="info">';
+  if(f.gr)h+='<div class="gr"><b>★ '+f.gr.r+'</b> on <a href="'+esc(f.gr.url)+'" target="_blank" rel="noopener">Goodreads</a> <span class="mute">('+esc(f.gr.n)+' ratings)</span></div>';
+  if(f.note)h+='<p class="mute" style="margin:0">'+esc(f.note)+'</p>';
+  if(f.rv&&f.rv.length)h+='<div><h4>Reader reviews</h4><div class="rv">'+f.rv.map(function(r){return '<p><em>'+esc(r[0])+'</em>'+esc(r[1])+'</p>'}).join('')+'</div></div>';
+  if(f.buy&&f.buy.length)h+='<div><h4>Where to buy</h4><div class="links">'+f.buy.map(function(l){return '<a class="'+(l[0].indexOf('Nuria')===0?'nuria':'')+'" href="'+esc(l[1])+'" target="_blank" rel="noopener">'+esc(l[0])+'</a>'}).join('')+'</div></div>';
+  if(f.more&&f.more.length)h+='<div><h4>More by '+esc(b.author||'this author')+'</h4>'+suggList(f.more)+'</div>';
+  if(f.topic&&TOPICS[f.topic])h+='<div><h4>Same topic: '+esc(TOPICS[f.topic].name)+'</h4>'+suggList(TOPICS[f.topic].list.filter(function(x){return x[0].toLowerCase()!==b.title.toLowerCase()&&!(f.more||[]).some(function(m){return m[0]===x[0]})}))+'</div>';
+  return h+'</div></details>'}
+var TOPICS={"masc": {"name": "Masculinity & men's self-development", "list": [["The Way of the Superior Man", "David Deida"], ["King, Warrior, Magician, Lover", "Robert Moore & Douglas Gillette"], ["Models", "Mark Manson"], ["The Masculine in Relationship", "Robert A. Glover"], ["The Top Shelf Man", "Richard Cooper"], ["18 Laws of Female Nature", "Jacob Aliet"], ["Iron John", "Robert Bly"], ["Man's Search for Meaning", "Viktor E. Frankl"], ["28 Commandments: A Journey into Manhood", "Andrew Kibe"], ["No More Mr. Nice Guy", "Robert A. Glover"]]}, "meta": {"name": "Metaphysics & the power of thought", "list": [["The Power of Your Subconscious Mind", "Joseph Murphy"], ["As a Man Thinketh", "James Allen"], ["The Science of Getting Rich", "Wallace D. Wattles"], ["The Master Key System", "Charles F. Haanel"], ["Think and Grow Rich", "Napoleon Hill"], ["The Power of Now", "Eckhart Tolle"], ["The Kybalion", "Three Initiates"]]}, "money": {"name": "Money & wealth", "list": [["The Richest Man in Babylon", "George S. Clason"], ["The Millionaire Next Door", "Thomas J. Stanley & William D. Danko"], ["Rich Dad Poor Dad", "Robert T. Kiyosaki"], ["I Will Teach You to Be Rich", "Ramit Sethi"], ["Die with Zero", "Bill Perkins"], ["Lessons from the Streets, The Art of Money", "Vincent Ogutu"]]}, "dark": {"name": "Persuasion, power & human behaviour", "list": [["The 48 Laws of Power", "Robert Greene"], ["The Laws of Human Nature", "Robert Greene"], ["Influence", "Robert B. Cialdini"], ["Games People Play", "Eric Berne"], ["In Sheep's Clothing", "George K. Simon"], ["Never Split the Difference", "Chris Voss"]]}, "kenya": {"name": "Kenyan memoir & true stories", "list": [["Unbowed", "Wangari Maathai"], ["Dreams in a Time of War", "Ngũgĩ wa Thiong'o"], ["Breaking the Illusions", "Sicily Kariuki"], ["Confessions of Nairobi Women", "Joan Thatiah"], ["Born a Crime", "Trevor Noah"], ["Educated", "Tara Westover"]]}};
+
+/* ---------- render ---------- */
+function quotesBlock(b){return '<details><summary>Notes &amp; quotes ('+b.quotes.length+')</summary>'+b.quotes.map(function(q,i){return '<div class="quote">'+esc(q.t)+'<small>'+(q.p?'p. '+esc(q.p)+' · ':'')+esc(q.d)+' · <button class="ghost" style="padding:2px 8px;font-size:12px" onclick="delQuote('+b.id+','+i+')">Remove</button></small></div>'}).join('')+
+  '<div class="row"><input class="grow" id="qt'+b.id+'" placeholder="A line worth keeping"><input class="n" id="qp'+b.id+'" type="number" placeholder="Page"></div><div class="row"><button onclick="addQuote('+b.id+')">Save quote</button></div></details>'}
+function delRow(b){return pendingDel===b.id?'<div class="row"><span class="mute">Remove "'+esc(b.title)+'"?</span><button class="danger" onclick="delBook('+b.id+')">Yes, remove</button><button class="ghost" onclick="pendingDel=null;render()">Keep it</button></div>':'<div class="row"><button class="ghost" onclick="askDel('+b.id+')">Remove book</button></div>'}
+function meta(b){return [b.format,b.total?b.total+' pages':'',b.isbn?'ISBN '+b.isbn:'',b.src?'From '+b.src:''].filter(Boolean).join(' · ')}
+function readingCard(b){
+  var left=b.total-b.page,dl=b.deadline?daysLeft(b.deadline):0,need=b.deadline?Math.ceil(left/dl):0,t=bookToday(b.id),col='hsl('+hue(b.title)+',60%,52%)',cap=goal().cap;
+  var chip=!b.deadline?'':t>=need?'<span class="chip ok">Done for today</span>':need>cap?'<span class="chip bad">Behind</span>':'<span class="chip ok">On track</span>';
+  var timing=S.timer&&S.timer.b===b.id;
+  return '<div class="card"><div class="in"><div class="bh" style="align-items:flex-start">'+covBtn(b,72)+'<div style="flex:1;min-width:0"><h2>'+esc(b.title)+'</h2>'+(b.author?'<p class="by">'+esc(b.author)+'</p>':'')+'<p class="mute">Page '+b.page+' of '+b.total+' · '+pct(b.page,b.total)+'%'+(b.deadline?' · '+dl+' days left':'')+'</p><div class="bar"><i style="width:'+pct(b.page,b.total)+'%;background:'+col+'"></i></div><div class="row" style="margin-top:8px">'+chip+'</div></div></div>'
+  +'<p style="margin:12px 0 0">'+(need?'<b>'+need+' pages</b> today'+(t?' ('+t+' read)':''):(t?t+' pages read today':'No deadline, read at your pace'))+'</p>'
+  +'<div class="pager"><button class="pm" onclick="bump('+b.id+',-1)" aria-label="Back one page"'+(b.page<=0?' disabled':'')+'>−</button>'
+  +'<label class="pnow"><span>Currently on page</span><input type="number" inputmode="numeric" min="0" max="'+b.total+'" value="'+b.page+'" aria-label="Current page of '+esc(b.title)+'" onfocus="this.select()" onchange="setPage('+b.id+',this.value)" onkeydown="if(event.key===\'Enter\')this.blur()"><small>of '+b.total+' · '+left+' to go</small></label>'
+  +'<button class="pm plus" onclick="bump('+b.id+',1)" aria-label="Read one more page"'+(left<=0?' disabled':'')+'>+1</button></div>'
+  +'<div class="row"><input class="n" type="number" inputmode="numeric" min="1" id="ad'+b.id+'" placeholder="Pages read" onkeydown="if(event.key===\'Enter\')addRead('+b.id+')"><button class="q" onclick="addRead('+b.id+')">+ Add pages</button><button class="ghost" onclick="bump('+b.id+',5)">+5</button><button class="ghost" onclick="bump('+b.id+',10)">+10</button></div>'
+  +'<div class="row">'+(S.timer?'':'<button class="sun" onclick="startTimer('+b.id+')">Start timer</button>')+(timing?'<span class="chip win">Timing · '+(b.page-(S.timer.p0!=null?S.timer.p0:b.page))+' pages this session</span>':'')+'</div>'
+  +'<details><summary>Log a full session</summary><div class="row"><input class="n" type="number" id="pg'+b.id+'" placeholder="Now on page"><input class="n" type="number" id="mn'+b.id+'" placeholder="Minutes"><input class="grow" id="nt'+b.id+'" placeholder="One takeaway"></div><div class="row"><button onclick="logIt('+b.id+')">Save session</button></div></details>'
+  +tagsBlock(b)+infoBlock(b)+quotesBlock(b)
+  +'<details><summary>Edit, move or remove</summary><div class="set"><label>Total pages<input type="number" value="'+b.total+'" onchange="setField('+b.id+',\'total\',+this.value||1)"></label><label>Finish by<input type="date" value="'+esc(b.deadline)+'" onchange="setField('+b.id+',\'deadline\',this.value)"></label><label class="full">Title<input value="'+esc(b.title)+'" onchange="setField('+b.id+',\'title\',this.value.trim()||\'Untitled\')"></label><label class="full">Author<input value="'+esc(b.author)+'" onchange="setField('+b.id+',\'author\',this.value.trim())"></label></div>'
+  +'<div class="row"><button class="ghost" onclick="move('+b.id+',\'done\')">Mark finished</button><button class="ghost" onclick="move('+b.id+',\'dnf\')">Did not finish</button><button class="ghost" onclick="move('+b.id+',\'want\')">Back to Want to read</button></div>'+delRow(b)+'</details></div></div>'}
+function stars(b){var h='<div class="stars" role="group" aria-label="Rating">';for(var i=1;i<=5;i++)h+='<button class="'+(i<=b.rating?'on':i-0.5===b.rating?'half':'')+'" aria-label="'+i+' star'+(i>1?'s':'')+'" onclick="setField('+b.id+',\'rating\','+(b.rating===i?0:i)+')">★</button>';return h+'</div>'}
+function shelfCard(b){
+  var h='<div class="card" id="bk'+b.id+'"><div class="in"><div class="bh" style="align-items:flex-start">'+covBtn(b,88)+'<div style="flex:1;min-width:0"><h2>'+esc(b.title)+'</h2>'+(b.author?'<p class="by">'+esc(b.author)+'</p>':'')+'<p class="mute">'+esc(meta(b))+'</p>'+'<p class="mute" style="font-size:12px">Tap the cover to '+(b.cover?'change':'add')+' a photo</p>'+tagsBlock(b)+'</div></div>';
+  if(b.status==='want')h+='<div class="row"><button class="sun" onclick="move('+b.id+',\'reading\')">Start reading</button></div>';
+  if(b.status==='dnf')h+='<p class="mute">Stopped on page '+b.page+'</p><div class="row"><button class="q" onclick="move('+b.id+',\'reading\')">Pick it up again</button></div>';
+  if(b.status==='done'){
+    h+=(b.finished?'<p class="mute">Finished '+esc(b.finished)+'</p>':'')+'<div class="row" style="margin-top:4px">'+stars(b)+'<button class="ghost" aria-pressed="'+!!b.fav+'" style="padding:4px 10px;font-size:13px'+(b.fav?';color:var(--bad);border-color:var(--bad)':'')+'" onclick="setField('+b.id+',\'fav\','+!b.fav+')">'+(b.fav?'♥ Favourite':'♡ Favourite')+'</button></div>'
+     +(b.total?'':'<details><summary>Add title and page details</summary><div class="set"><label class="full">Title<input value="'+esc(b.title)+'" onchange="setField('+b.id+',\'title\',this.value.trim()||\'Untitled\')"></label><label class="full">Author<input value="'+esc(b.author)+'" onchange="setField('+b.id+',\'author\',this.value.trim())"></label><label>Pages<input type="number" min="1" onchange="var v=+this.value;if(v){byId('+b.id+').page=v;setField('+b.id+',\'total\',v)}"></label><label>Finished on<input type="date" value="'+esc(b.finished)+'" onchange="setField('+b.id+',\'finished\',this.value)"></label></div></details>')
+     +'<div class="moods" role="group" aria-label="Mood">'+MOODS.map(function(m){return '<button aria-pressed="'+(b.mood===m)+'" onclick="setField('+b.id+',\'mood\',\''+(b.mood===m?'':m)+'\')">'+m+'</button>'}).join('')+'</div>'
+     +'<details'+(b.review?' open':'')+'><summary>Your review</summary><textarea id="rv'+b.id+'" placeholder="What stayed with you?" onchange="setField('+b.id+',\'review\',this.value.trim())">'+esc(b.review)+'</textarea></details>';
+  }
+  h+=infoBlock(b)+quotesBlock(b)+delRow(b)+'</div></div>';return h}
+function renderHero(){
+  var n=new Date(),hr=n.getHours();
+  document.getElementById('hi').textContent=hr<12?'Good morning':hr<17?'Good afternoon':'Good evening';
+  document.getElementById('date').textContent=n.toLocaleDateString(undefined,{weekday:'long',day:'numeric',month:'long'});
+  var G=goal(),tp=prog(),st=streak();
+  document.getElementById('ring').innerHTML=ringSvg(124,12,pct(tp,G.g),'#f5b942','rgba(255,255,255,.15)')+'<div class="c"><b id="ringv">'+tp+'</b><span>of '+G.g+' '+(G.unit==='min'?'minutes':'pages')+' today</span></div>';
+  document.getElementById('streak').innerHTML='<b style="font-size:22px">'+st+'-day streak</b><div style="opacity:.75;font-size:13px">Best: '+Math.max(S.best,st)+'</div>';
+  var dots='';for(var i=6;i>=0;i--){var d=new Date();d.setDate(d.getDate()-i);var on=S.log.some(function(g){return g.d===ds(d)});dots+='<i class="'+(on?'on':'')+'">'+'SMTWTFS'[d.getDay()]+'</i>'}
+  document.getElementById('dots').innerHTML=dots;
+  var nb=document.getElementById('nb');nb.hidden=!(window.Notification&&Notification.permission==='default');
+  var tb=document.getElementById('timerbar'),tm=S.timer,bk=tm&&byId(tm.b);
+  var tp0=tm&&tm.p0!=null?tm.p0:(bk?bk.page:0);
+  tb.innerHTML=bk?'<div class="timerbar"><b id="tclock">0:00</b><span style="flex:1;min-width:0">Reading '+esc(bk.title)+' · page '+bk.page+' ('+(bk.page-tp0>=0?'+':'')+(bk.page-tp0)+')</span><button class="sun" style="padding:8px 14px" onclick="bump('+bk.id+',1)" aria-label="Read one more page">+1 page</button></div><div class="row"><button class="sun" onclick="stopTimer()">Stop and save</button><button class="ghost" style="color:var(--hero-ink);border-color:rgba(255,255,255,.3)" onclick="cancelTimer()">Cancel</button></div>':'';
+  clock()}
+function clock(){var el=document.getElementById('tclock');if(!el||!S.timer)return;var rv=document.getElementById('ringv');if(S.gm==='minutes'&&rv&&+rv.textContent!==prog()){renderHero();return}var s=Math.floor((Date.now()-S.timer.start)/1000),h=Math.floor(s/3600),m=Math.floor(s%3600/60);el.textContent=(h?h+':'+String(m).padStart(2,'0'):m)+':'+String(s%60).padStart(2,'0')}
+function renderToday(){
+  var r=reading();
+  document.getElementById('books').innerHTML=r.length?r.map(readingCard).join(''):'<div class="card empty"><div class="in"><h2>Nothing on the go</h2><p class="mute">Scan a book\'s barcode to start, or pick one from your Want to read shelf.</p><div class="row"><button class="sun" onclick="go(\'add\')">Add a book</button>'+(S.books.some(function(b){return b.status==='want'})?'<button class="ghost" onclick="go(\'shelves\',\'want\')">Want to read</button>':'')+'</div></div></div>'}
+function renderShelves(){
+  var c={want:0,done:0,dnf:0};S.books.forEach(function(b){if(c[b.status]!=null)c[b.status]++});
+  var names={want:'Want to read',done:'Finished',dnf:'Did not finish'};
+  document.getElementById('shelfseg').innerHTML=Object.keys(names).map(function(k){return '<button aria-pressed="'+(shelfView===k)+'" onclick="shelfView=\''+k+'\';render()">'+names[k]+' ('+c[k]+')</button>'}).join('');
+  var tags=allTags();if(tagView&&tags.indexOf(tagView)<0)tagView='';
+  document.getElementById('tagseg').innerHTML=tags.length?'<button aria-pressed="'+(!tagView)+'" onclick="tagView=\'\';render()">All</button>'+tags.map(function(t){return '<button aria-pressed="'+(tagView===t)+'" onclick="tagView=\''+esc(t).replace(/&#39;/g,'\\&#39;')+'\';render()">#'+esc(t)+'</button>'}).join(''):'';
+  var list=S.books.filter(function(b){return b.status===shelfView&&(!tagView||(b.tags||[]).indexOf(tagView)>=0)});
+  if(shelfView==='done')list.sort(function(a,b){return String(b.finished).localeCompare(String(a.finished))});
+  var empty={want:'Books you plan to read go here. When you add a book, choose "Want to read".',done:'Books you finish land here, ready to rate.',dnf:'Books you set aside go here. No guilt, you can pick them up again.'};
+  if(list.length&&shelfView!=='want'&&shelfView!=='dnf'){
+    var ob=list.filter(function(b){return b.id===openBook})[0];
+    document.getElementById('shelf').innerHTML=(ob?shelfCard(ob).replace('<div class="in">','<div class="in"><div class="row" style="margin:0 0 8px;justify-content:flex-end"><button class="ghost" style="padding:4px 10px;font-size:13px" onclick="openBook=null;render()">Close</button></div>'):'<p class="mute" style="margin:0 0 10px">Tap a book to rate it, add a review or change its cover.</p>')+
+      '<div class="grid">'+list.map(function(b){return '<button class="tileb" aria-current="'+(b.id===openBook)+'" onclick="openBook='+b.id+';render();window.scrollTo({top:document.getElementById(\'p-shelves\').offsetTop-70})">'+cov(b)+'<span>'+esc(b.title)+'</span><small>'+(b.fav?'♥ ':'')+(b.rating?'★ '+b.rating:'')+'</small></button>'}).join('')+'</div>';
+    return}
+  document.getElementById('shelf').innerHTML=list.length?list.map(shelfCard).join(''):'<div class="card"><div class="in"><p class="mute">'+empty[shelfView]+'</p></div></div>'}
+function bar(vals,labels,cur){var mx=Math.max(1,Math.max.apply(null,vals));return vals.map(function(v,k){return '<div class="'+(k===cur?'t':'')+'"><i style="height:'+Math.round(v/mx*76)+'px"></i>'+(v||'')+'<br>'+labels[k]+'</div>'}).join('')}
+function renderStats(){
+  var y=year(),fin=finishedThisYear(),g=S.yearGoal||12,start=new Date(+y,0,1),doy=Math.floor((new Date()-start)/864e5)+1,expect=Math.round(g*doy/365*10)/10;
+  document.getElementById('yh').textContent=y+' reading challenge';
+  document.getElementById('goal').innerHTML='<div class="goalrow"><div class="mini">'+ringSvg(90,9,pct(fin.length,g),'var(--sun)','var(--line)')+'<b>'+fin.length+'/'+g+'</b></div><div style="flex:1;min-width:0"><p style="margin:0;font-weight:600">'+(fin.length>=g?'Goal reached. Raise the bar?':fin.length>=expect?'On pace: '+fin.length+' books, about '+expect+' expected by today.':(Math.ceil(expect)-fin.length)+' book'+(Math.ceil(expect)-fin.length===1?'':'s')+' behind pace ('+expect+' expected by today).')+'</p><div class="row"><label class="mute" for="yg">Books this year</label><input class="n" id="yg" type="number" min="1" value="'+g+'" onchange="S.yearGoal=Math.max(1,+this.value||12);save();render()"></div></div></div>';
+  var yl=S.log.filter(function(l){return l.d.slice(0,4)===y}),pages=yl.reduce(function(a,l){return a+l.p},0),minsT=yl.reduce(function(a,l){return a+(+l.m||0)},0),rated=S.books.filter(function(b){return b.rating}),avg=rated.length?(rated.reduce(function(a,b){return a+b.rating},0)/rated.length).toFixed(1):'–',ph=minsT>=20?Math.round(pace()*60):null;
+  document.getElementById('tiles').innerHTML=[[fin.length,'books finished'],[pages.toLocaleString(),'pages read'],[minsT?(minsT/60).toFixed(1):'0','hours timed'],[ph?ph:'–','pages per hour'],[avg,'average rating'],[S.books.filter(function(b){return b.status==='done'}).length,'finished, all time']].map(function(t){return '<div class="tile"><b>'+t[0]+'</b><span>'+t[1]+'</span></div>'}).join('');
+  var mv=[],ml='JFMAMJJASOND'.split('');for(var m=0;m<12;m++){var key=y+'-'+String(m+1).padStart(2,'0');mv.push(yl.filter(function(l){return l.d.slice(0,7)===key}).reduce(function(a,l){return a+l.p},0))}
+  document.getElementById('months').innerHTML=bar(mv,ml,new Date().getMonth());
+  var wv=[],wl=[];for(var i=6;i>=0;i--){var d=new Date();d.setDate(d.getDate()-i);wv.push(dayPages(ds(d)));wl.push('SMTWTFS'[d.getDay()])}
+  document.getElementById('week').innerHTML=bar(wv,wl,6);
+  var st=streak(),tot=S.log.reduce(function(a,g){return a+g.p},0),bd=[['First session',S.log.length>0],['First scan',(S.scanned||0)>0],['3-day streak',Math.max(S.best,st)>=3],['7-day streak',Math.max(S.best,st)>=7],['30-day streak',Math.max(S.best,st)>=30],['100 pages',tot>=100],['500 pages',tot>=500],['1,000 pages',tot>=1000],['Book finished',S.books.some(function(b){return b.status==='done'})],['5 books',S.books.filter(function(b){return b.status==='done'}).length>=5],['First review',S.books.some(function(b){return b.review})],['Year goal',fin.length>=g]];
+  document.getElementById('badges').innerHTML=bd.map(function(b){return '<span class="badge '+(b[1]?'on':'')+'">'+b[0]+'</span>'}).join('');
+  document.getElementById('log').innerHTML=S.log.length?S.log.slice().reverse().slice(0,30).map(function(g){var b=byId(g.b);return '<div class="log"><span class="chip">'+esc(b?b.title:'Removed book')+'</span> <span class="mute">'+g.d+' · '+g.p+' pages'+(g.m?' · '+g.m+' min':'')+'</span>'+(g.t?'<div>'+esc(g.t)+'</div>':'')+'</div>'}).join(''):'<p class="mute">No sessions yet. Tap +10 on a book after you read, or use the timer.</p>';
+  document.getElementById('ws').value=S.ws;document.getElementById('we').value=S.we;
+  document.getElementById('gm').value=S.gm||'auto';document.getElementById('gv').value=S.gv||20;document.getElementById('gvwrap').hidden=S.gm==='auto'||!S.gm;
+  document.getElementById('gvwrap').firstChild.textContent=S.gm==='minutes'?'Minutes a day':'Pages a day';
+  document.getElementById('theme').value=S.theme||'';
+  renderCal();renderWrap(y,fin,pages,minsT);renderData()}
+function lvl(p){return !p?'':p<10?'l1':p<25?'l2':p<50?'l3':'l4'}
+function renderCal(){
+  var weeks=20,end=new Date(),start=new Date();start.setDate(end.getDate()-end.getDay()-(weeks-1)*7);
+  var by={};S.log.forEach(function(g){by[g.d]=(by[g.d]||0)+g.p});
+  var h='',d=new Date(start),days=0,read=0;
+  for(var i=0;i<weeks*7;i++){var k=ds(d),fut=d>end,p=by[k]||0;if(!fut){days++;if(p)read++}h+='<i class="'+(fut?'fut':lvl(p))+'" title="'+k+': '+p+' pages"></i>';d.setDate(d.getDate()+1)}
+  var c=document.getElementById('cal');c.innerHTML=h;c.setAttribute('aria-label','Reading calendar: you read on '+read+' of the last '+days+' days');
+  document.getElementById('calnote').textContent='You read on '+read+' of the last '+days+' days. Each square is a day; brighter means more pages.'}
+function topOf(arr){var m={},best='',n=0;arr.forEach(function(x){if(!x)return;m[x]=(m[x]||0)+1;if(m[x]>n){n=m[x];best=x}});return best}
+function wrapData(y,fin,pages,minsT){
+  var rated=fin.filter(function(b){return b.rating}).sort(function(a,b){return b.rating-a.rating}),days={},longest=null;
+  S.log.forEach(function(g){if(g.d.slice(0,4)===y)days[g.d]=1});
+  fin.forEach(function(b){if(b.total&&(!longest||b.total>longest.total))longest=b});
+  var monthPages=[0,0,0,0,0,0,0,0,0,0,0,0];S.log.forEach(function(g){if(g.d.slice(0,4)===y)monthPages[+g.d.slice(5,7)-1]+=g.p});
+  var bm=monthPages.indexOf(Math.max.apply(null,monthPages));
+  return{y:y,books:fin.length,pages:pages,hours:Math.round(minsT/6)/10,days:Object.keys(days).length,best:S.best,top:rated[0]||null,mood:topOf(fin.map(function(b){return b.mood})),longest:longest,month:monthPages[bm]?new Date(+y,bm,1).toLocaleDateString(undefined,{month:'long'}):'',quotes:S.books.reduce(function(a,b){return a+b.quotes.length},0)}}
+function renderWrap(y,fin,pages,minsT){
+  var w=wrapData(y,fin,pages,minsT);document.getElementById('wraph').textContent='Your '+y+' in books';
+  var lines=[];if(w.top)lines.push('Top rated: <b>'+esc(w.top.title)+'</b> ('+w.top.rating+'★)');if(w.longest)lines.push('Longest read: <b>'+esc(w.longest.title)+'</b> ('+w.longest.total+' pages)');if(w.month)lines.push('Biggest month: <b>'+w.month+'</b>');if(w.mood)lines.push('Most common mood: <b>'+esc(w.mood)+'</b>');
+  document.getElementById('wrap').innerHTML='<div class="wrap"><div class="tiles"><div class="tile"><b>'+w.books+'</b><span>books finished</span></div><div class="tile"><b>'+w.pages.toLocaleString()+'</b><span>pages logged</span></div><div class="tile"><b>'+w.days+'</b><span>days you read</span></div><div class="tile"><b>'+w.best+'</b><span>best streak (days)</span></div></div>'+(lines.length?'<p style="margin:12px 0 0;line-height:1.7">'+lines.join('<br>')+'</p>':'')+'</div><div class="row"><button class="sun" onclick="shareWrap()">Share as a picture</button></div><p class="mute">Makes an image you can post on WhatsApp status or save.</p>'}
+function wrapImage(){
+  var y=year(),fin=finishedThisYear(),yl=S.log.filter(function(l){return l.d.slice(0,4)===y}),w=wrapData(y,fin,yl.reduce(function(a,l){return a+l.p},0),yl.reduce(function(a,l){return a+(+l.m||0)},0));
+  var c=document.createElement('canvas');c.width=1080;c.height=1920;var x=c.getContext('2d');
+  var g=x.createLinearGradient(0,0,0,1920);g.addColorStop(0,'#1b2340');g.addColorStop(1,'#2d3a6e');x.fillStyle=g;x.fillRect(0,0,1080,1920);
+  x.fillStyle='#f5b942';x.fillRect(90,170,16,120);
+  x.fillStyle='#fff';x.font='800 92px "Bricolage Grotesque",system-ui,sans-serif';x.fillText('My '+y,140,240);x.font='600 56px "Bricolage Grotesque",system-ui,sans-serif';x.globalAlpha=.8;x.fillText('in books',140,310);x.globalAlpha=1;
+  var tiles=[[w.books,'books finished'],[w.pages.toLocaleString(),'pages read'],[w.days,'days of reading'],[w.best,'day best streak']];
+  tiles.forEach(function(t,i){var tx=90+(i%2)*460,ty=420+Math.floor(i/2)*330;x.fillStyle='rgba(255,255,255,.1)';rr(x,tx,ty,440,300,36);x.fill();x.fillStyle=i===0?'#f5b942':'#fff';x.font='800 120px "Bricolage Grotesque",system-ui,sans-serif';x.fillText(String(t[0]),tx+40,ty+160);x.fillStyle='rgba(255,255,255,.8)';x.font='500 40px "Bricolage Grotesque",system-ui,sans-serif';x.fillText(t[1],tx+40,ty+240)});
+  var ly=1150;function line(lab,val){if(!val)return;x.fillStyle='rgba(255,255,255,.65)';x.font='500 38px "Bricolage Grotesque",system-ui,sans-serif';x.fillText(lab,90,ly);x.fillStyle='#fff';x.font='italic 500 50px Literata,Georgia,serif';wrapText(x,val,90,ly+66,900,60);ly+=200}
+  line('Top rated',w.top?w.top.title+'  '+'★'.repeat(Math.round(w.top.rating)):'');line('Longest read',w.longest?w.longest.title+' · '+w.longest.total+' pages':'');line('Biggest month',w.month);
+  x.fillStyle='rgba(255,255,255,.55)';x.font='500 34px "Bricolage Grotesque",system-ui,sans-serif';x.fillText('Tracked with Reading Tracker · Chunga Lab',90,1840);
+  return c}
+function rr(x,a,b,w,h,r){x.beginPath();x.moveTo(a+r,b);x.arcTo(a+w,b,a+w,b+h,r);x.arcTo(a+w,b+h,a,b+h,r);x.arcTo(a,b+h,a,b,r);x.arcTo(a,b,a+w,b,r);x.closePath()}
+function wrapText(x,t,a,b,maxW,lh){var lines=[''];String(t).split(' ').forEach(function(w){var cur=lines[lines.length-1],test=cur?cur+' '+w:w;if(x.measureText(test).width>maxW&&cur)lines.push(w);else lines[lines.length-1]=test});if(lines.length>2){lines=lines.slice(0,2);lines[1]+='…'}lines.forEach(function(l,k){x.fillText(l,a,b+k*lh)})}
+async function shareWrap(){
+  try{await document.fonts.ready}catch(e){}
+  var c=wrapImage(),blob=await new Promise(function(r){c.toBlob(r,'image/png')}),name='my-'+year()+'-in-books.png',file=new File([blob],name,{type:'image/png'});
+  if(navigator.canShare&&navigator.canShare({files:[file]})){try{await navigator.share({files:[file],title:'My '+year()+' in books'});return}catch(e){if(e&&e.name==='AbortError')return}}
+  var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;a.click();setTimeout(function(){URL.revokeObjectURL(a.href)},1000);toast('Picture saved to your Downloads')}
+function renderNudge(){
+  var el=document.getElementById('nudge'),n=S.books.length,last=S.backedUp,age=last?Math.round((new Date(today())-new Date(last))/864e5):999;
+  el.innerHTML=n>=3&&age>=14?'<div class="note warn">'+(last?'Your last backup was '+age+' days ago.':'You have not saved a backup yet.')+' Your books live only on this phone. <button class="ghost" style="padding:4px 10px;font-size:13px;margin-left:4px" onclick="backup()">Back up now</button></div>':''}
+function render(){renderHero();renderNudge();renderToday();renderShelves();renderStats();tick()}
+function go(t,shelf){tab=t;if(shelf)shelfView=shelf;['today','add','shelves','stats'].forEach(function(k){document.getElementById('p-'+k).hidden=k!==t;document.getElementById('t-'+k).setAttribute('aria-selected',k===t)});render();window.scrollTo({top:0})}
+document.querySelectorAll('.tabs button').forEach(function(b){b.onclick=function(){go(b.dataset.tab)}});
+function tick(){var c=document.getElementById('count'),m=nowMin(),a=mins(S.ws),b=mins(S.we),act=reading().length,done=S.log.some(function(g){return g.d===today()});
+  if(!act){c.className='count';c.textContent='Add a book to get your daily plan.';return}
+  if(m<a){var w=a-m;c.className='count';c.textContent='Reading window opens in '+(w>=60?Math.floor(w/60)+'h ':'')+w%60+'m'}
+  else if(m<=b){c.className='count live';c.textContent='Window is open, '+(b-m)+' min left. '+(done?'Nice, you have logged today.':'You have not logged yet.')}
+  else{c.className='count';c.textContent=done?'Window closed. Streak safe for today.':'Window closed. Even 10 pages keeps your streak.'}
+  if(window.Notification&&Notification.permission==='granted'&&S.note!==today()&&m>=a&&m<=b&&!done){S.note=today();save();notify('Time to read','Your reading window is open.')}}
+document.getElementById('nb').onclick=function(){if(!window.Notification){toast('Reminders are not supported here');return}Notification.requestPermission().then(function(p){toast(p==='granted'?'Reminders on. You get one when your reading window opens and the app is open.':'Reminders blocked');render()}).catch(function(){toast('Reminders are not available here')})};
+function notify(t,b){var o={body:b,icon:'icon-192.png',badge:'icon-192.png',tag:'read'};if(navigator.serviceWorker&&navigator.serviceWorker.controller){navigator.serviceWorker.ready.then(function(r){r.showNotification(t,o)}).catch(function(){})}else{try{new Notification(t,o)}catch(e){}}}
+function setWin(){S.ws=document.getElementById('ws').value||S.ws;S.we=document.getElementById('we').value||S.we;save();render()}
+document.getElementById('ws').onchange=setWin;document.getElementById('we').onchange=setWin;
+document.getElementById('gm').onchange=function(){S.gm=this.value;save();render()};
+document.getElementById('gv').onchange=function(){S.gv=Math.max(1,Math.round(+this.value)||20);save();render()};
+document.getElementById('theme').onchange=function(){S.theme=this.value;save();applyTheme();render()};
+matchMedia('(prefers-color-scheme:dark)').addEventListener('change',applyTheme);
+document.addEventListener('visibilitychange',function(){if(!document.hidden)render()});
+applyTheme();
+(function(){var p=new URLSearchParams(location.search).get('tab');if(p==='add'||p==='stats'||p==='shelves')go(p);else render()})();
+setInterval(tick,30000);setInterval(clock,1000);askPersist();
+
+/* ---------- app shell: offline cache, updates, install button ---------- */
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.register('sw.js').then(function(reg){
+    function show(w){var b=document.getElementById('updateBar');b.hidden=false;document.getElementById('updateBtn').onclick=function(){w.postMessage('skip')}}
+    if(reg.waiting&&navigator.serviceWorker.controller)show(reg.waiting);
+    reg.addEventListener('updatefound',function(){var w=reg.installing;w.addEventListener('statechange',function(){if(w.state==='installed'&&navigator.serviceWorker.controller)show(w)})});
+    setInterval(function(){reg.update().catch(function(){})},60*60*1000);
+  }).catch(function(){});
+  var reloaded=false;navigator.serviceWorker.addEventListener('controllerchange',function(){if(!reloaded){reloaded=true;location.reload()}});
+}
+(function(){
+  var deferred=null,bar=document.getElementById('installBar'),standalone=matchMedia('(display-mode: standalone)').matches||navigator.standalone;
+  function later(){try{return localStorage.getItem('rt_install_later')==='1'}catch(e){return false}}
+  window.addEventListener('beforeinstallprompt',function(e){e.preventDefault();deferred=e;if(!standalone&&!later())bar.hidden=false});
+  document.getElementById('installBtn').onclick=async function(){if(!deferred)return;deferred.prompt();try{await deferred.userChoice}catch(e){}deferred=null;bar.hidden=true};
+  document.getElementById('installLater').onclick=function(){bar.hidden=true;try{localStorage.setItem('rt_install_later','1')}catch(e){}};
+  window.addEventListener('appinstalled',function(){bar.hidden=true;askPersist();toast('Installed. Open it from your home screen.')});
+})();
+</script>
+
+</body></html>
