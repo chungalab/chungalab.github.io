@@ -1,5 +1,5 @@
 // Bump VERSION whenever you change a file.
-const VERSION = 'v3';
+const VERSION = 'v4';
 const CACHE = 'workout-tracker-' + VERSION;
 const FILES = ['./', 'index.html', 'manifest.webmanifest', 'icon-192.png', 'icon-512.png', 'icon-maskable-512.png'];
 self.addEventListener('install', e => e.waitUntil(caches.open(CACHE).then(c => c.addAll(FILES))));

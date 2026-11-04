@@ -3254,6 +3254,46 @@ function seedStretchPacks() {
   if (changed) persistStretches();
 }
 seedStretchPacks();
+
+/* ---------- One-time update (Nov 2026): December targets ---------- */
+// User asked (2026-11-04): bodyweight goal 75kg by Dec 31 (78kg later, maintain
+// if gaining proves hard), and Dec 18 strength targets shown on each main lift.
+// Dec 15-18 is baseline week; January restarts at ~85-90% of those numbers.
+function addDecemberTargets() {
+  const FLAG = 'workout_tracker_dec_targets_v1';
+  if (load(FLAG)) return;
+  if (bwTarget && bwTarget.weight === 78 && bwTarget.date === '2026-12-31') {
+    bwTarget = { weight: 75, date: '2026-12-31' };
+    save(BW_TARGET_KEY, bwTarget);
+  }
+  const TARGETS = [
+    [/^deadlift$/i, '110kg × 5 (or a clean single ~120). Path: 102.5 → 105 → 107.5 → 110. Move up only when every set is 5 clean reps, flat back.'],
+    [/back squat/i, '70kg × 8'],
+    [/^hack squat/i, '100kg × 10'],
+    [/romanian deadlift \(dumbbell\)/i, '32.5kg each × 10'],
+    [/^overhead press$/i, '25kg × 8'],
+    [/^incline (barbell|dumbbell) press$/i, 'Barbell 40kg × 10 · Dumbbell 17.5kg each × 12'],
+    [/lat pulldown/i, '110kg × 12'],
+    [/^(cable|seated) row$/i, '65kg × 10'],
+    [/barbell bicep curl/i, '15kg × 10'],
+  ];
+  const notes = [];
+  data.order.forEach(day => (data.days[day] || []).forEach(ex => {
+    const t = TARGETS.find(([re]) => re.test(ex.name));
+    if (!t) return;
+    const line = '🎯 Dec 18: ' + t[1];
+    if ((ex.note || '').includes('🎯 Dec 18')) return;
+    ex.note = ex.note ? line + ' ' + ex.note : line;
+    notes.push(`${ex.name}: Dec 18 target added`);
+  }));
+  notes.push('Bodyweight target set to 75kg by Dec 31 (78kg later; maintaining is the fallback)');
+  notes.push('Dec 15–18 = baseline week. Log your best clean set on each lift.');
+  const prev = data.tidyNote && !data.tidyNote.dismissed ? data.tidyNote.notes : [];
+  data.tidyNote = { date: todayStr(), notes: prev.concat(notes) };
+  persist();
+  save(FLAG, true);
+}
+addDecemberTargets();
 // Remember which stretches were ticked today, by name.
 function logStretchNames(day) {
   const st = getStretchesForDay(day), c = getChecksForDay(day), names = [];
