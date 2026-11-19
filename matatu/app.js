@@ -71,7 +71,10 @@ function perfKeystroke(value, run) {
   );
 }
 
-const DATA_NOTE = "Based on 2019 data - confirm with the conductor.";
+const OLD_NOTE = "Based on 2019 data - confirm with the conductor.";
+const VERIFIED_NOTE = "Stages can change, confirm with the conductor.";
+// Verified routes already show their date in the badge, so they get the short note; every other route keeps the 2019 warning.
+const dataNote = (route) => (verifiedLabel(corrections, route) ? VERIFIED_NOTE : OLD_NOTE);
 
 const EXAMPLES = ["Rongai", "Kariobangi", "Kahawa", "Kangemi", "Ngong", "Githurai"];
 
@@ -345,7 +348,7 @@ function routeCard(plan, place) {
         : stopsText(plan.stopsToGo) + (plan.stopsToGo ? " to " + place.name : ""),
     ),
     ...badge(plan.route),
-    el("small", "data-note", DATA_NOTE),
+    el("small", "data-note", dataNote(plan.route)),
   );
   a.append(el("span", "route-number", displayRoute(plan.route)), body);
   const wrap = el("div", "card-wrap");
@@ -416,7 +419,7 @@ function renderPlan(plan, place) {
   if (plan.approx) {
     head.append(el("p", "muted", "This place is only listed on the trip into town, so the stop count is approximate."));
   }
-  head.append(...badge(plan.route), el("small", "data-note", DATA_NOTE), reportLink(plan, place));
+  head.append(...badge(plan.route), el("small", "data-note", dataNote(plan.route)), reportLink(plan, place));
   const sections = [head];
 
   const mapBox = el("div", "map");
@@ -473,7 +476,7 @@ function renderRouteOnly(route) {
     list,
     ...boardingLine(route),
     ...badge(route),
-    el("small", "data-note", DATA_NOTE),
+    el("small", "data-note", dataNote(route)),
     link(reportHref({ route, stage: served.length === 1 ? label(first) : "" }), "Report a mistake", "report-link"),
   );
 
@@ -624,7 +627,7 @@ function renderTerms() {
   const credits = el("ul");
   const osm = el("li", "", "Map tiles and map data: © ");
   osm.append(outside("https://www.openstreetmap.org/copyright", "OpenStreetMap contributors"), ".");
-  credits.append(el("li", "", "Route data: Digital Matatus (2019)."), osm);
+  credits.append(el("li", "", "Route data: Digital Matatus (2019), with corrections from community route lists (2021)."), osm);
 
   const questions = el("p", "", "Questions or corrections? Please use the contact form: ");
   questions.append(outside("https://chungalab.github.io/contact.html", "chungalab.github.io/contact.html"));
@@ -636,7 +639,7 @@ function renderTerms() {
     el("p", "", "A free guide to matatu stages in the Nairobi CBD. It is not official. It is not linked to any sacco, county government or NTSA."),
     heading("About the information"),
     list(
-      "The routes come from Digital Matatus (2019), plus corrections from users.",
+      "The routes come from Digital Matatus (2019), plus corrections from community route lists (2021) and from users.",
       "It may be out of date.",
       "Always confirm with the conductor before you board.",
       "The app does not show fares or timetables.",

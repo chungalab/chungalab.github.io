@@ -64,7 +64,7 @@
   {
     "route": "14B",
     "action": "boarding_note",
-    "rider_note": "Boards in the CBD between Railways and the bus station Area",
+    "rider_note": "Boards in the CBD between Railways and the bus station area.",
     "note": "Internal: exact boarding spot reported locally; not shown to riders.",
     "source": "Owner local knowledge",
     "date": "2026-11-18"
