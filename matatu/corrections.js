@@ -1,5 +1,7 @@
 // Corrections layer: corrections.json can mark a route "verify" (badge, sorts first), "hide" (gone everywhere) or
 // "relabel" (shown under a different name, e.g. "14 (via Thika Rd)"; add "verified": true to give it the badge too).
+// "boarding_note" attaches a short rider-facing text to a route; the text is the entry's "rider_note" field.
+// An entry's "note" field is an internal comment: it is never shown to riders, for any action.
 // Any entry may also have a "group": routes sharing a group id are shown together in results (see groupMates).
 // Route values are the original data names ("0027", not "27"). The data files themselves are never changed:
 // hidden routes are filtered out in memory after loading. Pure functions, no DOM.
@@ -13,6 +15,7 @@ export function parseCorrections(raw) {
   const verified = new Map();
   const labels = new Map(); // route -> display label, from "relabel" entries
   const groups = new Map(); // route -> group id, from any entry with a "group" (routes that belong together)
+  const notes = new Map(); // route -> rider-facing text, from "boarding_note" entries ("rider_note" field)
   if (Array.isArray(raw)) {
     for (const entry of raw) {
       if (!entry || typeof entry.route !== "string" || !entry.route) continue;
@@ -22,6 +25,8 @@ export function parseCorrections(raw) {
       else if (entry.action === "relabel") {
         if (typeof entry.display === "string" && entry.display.trim()) labels.set(entry.route, entry.display.trim());
         if (entry.verified === true) verified.set(entry.route, entry);
+      } else if (entry.action === "boarding_note") {
+        if (typeof entry.rider_note === "string" && entry.rider_note.trim()) notes.set(entry.route, entry.rider_note.trim());
       }
     }
   }
@@ -29,9 +34,13 @@ export function parseCorrections(raw) {
     verified.delete(route);
     labels.delete(route);
     groups.delete(route);
+    notes.delete(route);
   }
-  return { hidden, verified, labels, groups };
+  return { hidden, verified, labels, groups, notes };
 }
+
+// The rider-facing boarding note for a route, or "" when it has none.
+export const boardingNote = (corr, route) => corr.notes.get(route) || "";
 
 // The other routes in the same group as `route` (e.g. the other loop of route 14), in corrections.json order.
 // Empty when the route has no group. Hidden routes are never members.

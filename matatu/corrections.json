@@ -25,5 +25,48 @@
     "note": "Thika Road loop of route 14 (data number 0027)",
     "source": "Owner local knowledge",
     "date": "2026-10-30"
+  },
+  {
+    "route": "125",
+    "action": "verify",
+    "note": "Confirmed by Castro, Nov 2026. Boards around Afya Centre and Railways.",
+    "source": "Owner local knowledge",
+    "date": "2026-11-17"
+  },
+  {
+    "route": "48O",
+    "action": "verify",
+    "note": "Confirmed by Castro, Nov 2026. Boards at Odeon/Latema Rd.",
+    "source": "Owner local knowledge",
+    "date": "2026-11-17"
+  },
+  {
+    "route": "48A",
+    "action": "verify",
+    "note": "Confirmed by Castro, Nov 2026. Boards at Odeon/Latema Rd.",
+    "source": "Owner local knowledge",
+    "date": "2026-11-17"
+  },
+  {
+    "route": "46K",
+    "action": "verify",
+    "note": "Confirmed by Castro, Nov 2026. Boards at Ambassadeur/Kencom.",
+    "source": "Owner local knowledge",
+    "date": "2026-11-17"
+  },
+  {
+    "route": "46H",
+    "action": "verify",
+    "note": "Route confirmed by Castro, Nov 2026. Boards around OTC (stage to confirm).",
+    "source": "Owner local knowledge",
+    "date": "2026-11-17"
+  },
+  {
+    "route": "14B",
+    "action": "boarding_note",
+    "rider_note": "Boards in the CBD between Railways and the bus station Area",
+    "note": "Internal: exact boarding spot reported locally; not shown to riders.",
+    "source": "Owner local knowledge",
+    "date": "2026-11-18"
   }
 ]

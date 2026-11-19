@@ -3,7 +3,7 @@
 import { showStages as rawShowStages, routeChips, focusStage, showUser } from "./map.js";
 import { getPosition, nearestStages, isFar, friendlyMessage, isNearMe } from "./geo.js";
 import { displayRoute, initRouteNames } from "./routenames.js";
-import { parseCorrections, isHidden, visibleData, verifiedLabel, verifiedFirst, groupMates } from "./corrections.js";
+import { parseCorrections, isHidden, visibleData, verifiedLabel, verifiedFirst, groupMates, boardingNote } from "./corrections.js";
 import { REASONS, reportHref, buildReport, sendReport } from "./report.js";
 import {
   buildIndex,
@@ -92,6 +92,15 @@ function offPlacePlan(name) {
 const badge = (route) => {
   const text = verifiedLabel(corrections, route);
   return text ? [el("small", "verified", text)] : [];
+};
+// The "Boarding note: ..." line from corrections.json (rider_note) as a list of nodes: empty for routes without one.
+// Text only (never HTML).
+const boardingLine = (route) => {
+  const text = boardingNote(corrections, route);
+  if (!text) return [];
+  const line = el("small", "boarding-note");
+  line.append(el("strong", "", "Boarding note: "), text);
+  return [line];
 };
 let longNames = new Map(); // original route value -> full long_name, for the report screen
 let map = null;
@@ -326,6 +335,7 @@ function routeCard(plan, place) {
   const body = el("span", "card-body");
   body.append(
     el("strong", "", plan.board ? "Board at: " + label(plan.board) : "No CBD stage in our data"),
+    ...boardingLine(plan.route),
     el("span", "muted", plan.longName),
     el(
       "span",
@@ -399,6 +409,7 @@ function renderPlan(plan, place) {
   );
   head.append(
     el("p", "lead", plan.board ? "Board at: " + label(plan.board) : "This route does not pass a CBD stage."),
+    ...boardingLine(plan.route),
     el("p", "muted", plan.longName),
     el("p", "muted", stopsText(plan.stopsToGo) + (plan.stopsToGo ? " to " + place.name : " at " + place.name)),
   );
@@ -460,6 +471,7 @@ function renderRouteOnly(route) {
   head.append(
     el("p", "muted", "Board at:"),
     list,
+    ...boardingLine(route),
     ...badge(route),
     el("small", "data-note", DATA_NOTE),
     link(reportHref({ route, stage: served.length === 1 ? label(first) : "" }), "Report a mistake", "report-link"),

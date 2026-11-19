@@ -11,26 +11,25 @@ export function cleanRoute(name) {
 
 // Call once with every route name in the data. Routes that would look identical after cleaning are
 // told apart: the one without a suffix keeps the plain number, the others become "11 (alt)", "11 (alt 3)"...
-// overrides (optional) is a Map of original name -> label from corrections.json ("relabel"); it wins over cleaning.
+// "(alt)" is decided from the original route data alone, before any relabel. So "11_2" stays "11 (alt)" even when "11" is relabelled.
+// overrides (optional) is a Map of original name -> label from corrections.json ("relabel"). It is applied last, on top,
+// and changes only the route it names.
 export function initRouteNames(allNames, overrides) {
   const groups = new Map();
-  const fixed = new Map();
   for (const name of allNames) {
-    if (overrides && overrides.has(name)) {
-      fixed.set(name, overrides.get(name));
-      continue;
-    }
     const clean = cleanRoute(name);
     if (!groups.has(clean)) groups.set(clean, []);
     groups.get(clean).push(name);
   }
-  labels = new Map(fixed);
+  labels = new Map();
   for (const [clean, members] of groups) {
     if (members.length < 2) continue;
     const suffixed = (n) => (/_\d+$/.test(n) ? 1 : 0);
     members.sort((a, b) => suffixed(a) - suffixed(b) || a.localeCompare(b));
     members.forEach((name, i) => labels.set(name, i === 0 ? clean : clean + (i === 1 ? " (alt)" : " (alt " + (i + 1) + ")")));
   }
+  // Relabels on top. A name that is not in allNames is ignored.
+  if (overrides) for (const name of allNames) if (overrides.has(name)) labels.set(name, overrides.get(name));
 }
 
 export function displayRoute(name) {
