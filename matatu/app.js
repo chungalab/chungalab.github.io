@@ -329,9 +329,9 @@ function renderHome() {
   }
 }
 
-// The small "Report a mistake" link. On a card it sits beside the card's own link, never inside it.
+// The small "Stage or route wrong? Tell us" link. On a card it sits beside the card's own link, never inside it.
 const reportLink = (plan, place) =>
-  link(reportHref({ route: plan.route, stage: plan.board ? label(plan.board) : "", to: place.name }), "Report a mistake", "report-link");
+  link(reportHref({ route: plan.route, stage: plan.board ? label(plan.board) : "", to: place.name }), "Stage or route wrong? Tell us", "report-link");
 
 function routeCard(plan, place) {
   const a = link(planHref(plan.route, place.key), "", "card");
@@ -477,7 +477,7 @@ function renderRouteOnly(route) {
     ...boardingLine(route),
     ...badge(route),
     el("small", "data-note", dataNote(route)),
-    link(reportHref({ route, stage: served.length === 1 ? label(first) : "" }), "Report a mistake", "report-link"),
+    link(reportHref({ route, stage: served.length === 1 ? label(first) : "" }), "Stage or route wrong? Tell us", "report-link"),
   );
 
   const mapBox = el("div", "map");
@@ -605,7 +605,7 @@ function renderReport(params) {
   });
 
   screen.replaceChildren(
-    section(link("#/", "← Back to home", "back"), el("h2", "", "Report a mistake"), summary, form),
+    section(link("#/", "← Back to home", "back"), el("h2", "", "Tell us what's wrong"), summary, form),
   );
 }
 
@@ -644,8 +644,7 @@ function renderTerms() {
       "Always confirm with the conductor before you board.",
       "The app does not show fares or timetables.",
       "Please travel safely.",
-      "Corrections are checked by a person before anything is changed.",
-      "If you tap “Report a mistake”, your report is sent through Formspree to our email. Every report is checked by a person before any change is made.",
+      "If you tap “Stage or route wrong? Tell us”, your report is sent through Formspree to our email. Every report is checked by a person before any change is made.",
     ),
     heading("Privacy"),
     list(
