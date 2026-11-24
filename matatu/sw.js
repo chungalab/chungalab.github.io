@@ -2,7 +2,7 @@
 // so it works at the Live Server root now and under /matatu/ when published.
 //
 // To ship an update, change VERSION. The new worker saves fresh copies and deletes the old caches.
-const VERSION = "matatu-v13";
+const VERSION = "matatu-v14";
 const SHELL = VERSION + "-shell";
 const TILES = VERSION + "-tiles";
 const MAX_TILES = 150; // map tiles are saved only as they are viewed; the oldest are dropped past this
@@ -46,7 +46,9 @@ self.addEventListener("install", (event) => {
   event.waitUntil(
     caches
       .open(SHELL)
-      .then((cache) => cache.addAll(SHELL_FILES))
+      // cache: "reload" skips the browser's own HTTP cache (GitHub Pages keeps files for up to 10 minutes),
+      // so a new VERSION always saves the files just published, not copies from before the update.
+      .then((cache) => cache.addAll(SHELL_FILES.map((f) => new Request(f, { cache: "reload" }))))
       .then(() => self.skipWaiting()),
   );
 });
