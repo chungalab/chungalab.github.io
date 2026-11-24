@@ -564,7 +564,7 @@ function renderReport(params) {
   const detailsLabel = el("label", "", "Details (optional)");
   detailsLabel.htmlFor = details.id;
 
-  // Honeypot: hidden from people; bots fill it in. Formspree drops reports where it is not empty.
+  // Honeypot: hidden from people; bots fill it in. The bot drops reports where it is not empty.
   const trap = el("input");
   trap.type = "text";
   trap.name = "_gotcha";
@@ -644,7 +644,7 @@ function renderTerms() {
       "Always confirm with the conductor before you board.",
       "The app does not show fares or timetables.",
       "Please travel safely.",
-      "If you tap “Stage or route wrong? Tell us”, your report is sent through Formspree to our email. Every report is checked by a person before any change is made.",
+      "If you tap “Stage or route wrong? Tell us”, your report is sent to the project team through our Telegram bot. Every report is checked by a person before any change is made.",
     ),
     heading("Privacy"),
     list(

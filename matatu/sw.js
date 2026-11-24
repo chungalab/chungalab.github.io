@@ -2,7 +2,7 @@
 // so it works at the Live Server root now and under /matatu/ when published.
 //
 // To ship an update, change VERSION. The new worker saves fresh copies and deletes the old caches.
-const VERSION = "matatu-v12";
+const VERSION = "matatu-v13";
 const SHELL = VERSION + "-shell";
 const TILES = VERSION + "-tiles";
 const MAX_TILES = 150; // map tiles are saved only as they are viewed; the oldest are dropped past this
