@@ -68,5 +68,20 @@
     "note": "Internal: exact boarding spot reported locally; not shown to riders.",
     "source": "Owner local knowledge",
     "date": "2026-11-18"
+  },
+  {
+    "id": 19,
+    "route": "14",
+    "route_display": "14 (via Juja Rd)",
+    "route_name": "Ronald Ngala-Juja Road-Eastleigh-Huruma-Kariobangi",
+    "stage": "OTC",
+    "destination": null,
+    "problem": "Stage has moved",
+    "details": "Kamkunju",
+    "lat": null,
+    "lon": null,
+    "status": "approved",
+    "approved_by": "Jush",
+    "approved_at": "2026-11-26T08:05:34.887Z"
   }
 ]
