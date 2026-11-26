@@ -1,75 +1,5 @@
 [
   {
-    "route": "14",
-    "action": "relabel",
-    "display": "14 (via Juja Rd)",
-    "group": "14-kariobangi",
-    "verified": true,
-    "note": "Main Kariobangi route from town (OTC → Kariobangi Terminal)",
-    "source": "Owner local knowledge",
-    "date": "2026-10-29"
-  },
-  {
-    "route": "28",
-    "action": "verify",
-    "note": "Gikomba → Kariobangi",
-    "source": "Owner local knowledge",
-    "date": "2026-10-29"
-  },
-  {
-    "route": "0027",
-    "action": "relabel",
-    "display": "14 (via Thika Rd)",
-    "group": "14-kariobangi",
-    "verified": true,
-    "note": "Thika Road loop of route 14 (data number 0027)",
-    "source": "Owner local knowledge",
-    "date": "2026-10-30"
-  },
-  {
-    "route": "125",
-    "action": "verify",
-    "note": "Confirmed by Castro, Nov 2026. Boards around Afya Centre and Railways.",
-    "source": "Owner local knowledge",
-    "date": "2026-11-17"
-  },
-  {
-    "route": "48O",
-    "action": "verify",
-    "note": "Confirmed by Castro, Nov 2026. Boards at Odeon/Latema Rd.",
-    "source": "Owner local knowledge",
-    "date": "2026-11-17"
-  },
-  {
-    "route": "48A",
-    "action": "verify",
-    "note": "Confirmed by Castro, Nov 2026. Boards at Odeon/Latema Rd.",
-    "source": "Owner local knowledge",
-    "date": "2026-11-17"
-  },
-  {
-    "route": "46K",
-    "action": "verify",
-    "note": "Confirmed by Castro, Nov 2026. Boards at Ambassadeur/Kencom.",
-    "source": "Owner local knowledge",
-    "date": "2026-11-17"
-  },
-  {
-    "route": "46H",
-    "action": "verify",
-    "note": "Route confirmed by Castro, Nov 2026. Boards around OTC (stage to confirm).",
-    "source": "Owner local knowledge",
-    "date": "2026-11-17"
-  },
-  {
-    "route": "14B",
-    "action": "boarding_note",
-    "rider_note": "Boards in the CBD between Railways and the bus station area.",
-    "note": "Internal: exact boarding spot reported locally; not shown to riders.",
-    "source": "Owner local knowledge",
-    "date": "2026-11-18"
-  },
-  {
     "id": 19,
     "route": "14",
     "route_display": "14 (via Juja Rd)",
@@ -83,20 +13,5 @@
     "status": "approved",
     "approved_by": "Jush",
     "approved_at": "2026-11-26T08:05:34.887Z"
-  },
-  {
-    "id": 21,
-    "route": "145",
-    "route_display": "145",
-    "route_name": "Munyu Road-Pangani-Roysambu-Githurai-KU-Ruiru",
-    "stage": "Tusker/Ronald Ngala",
-    "destination": "Kahawa",
-    "problem": "Stage has moved",
-    "details": "Riverside",
-    "lat": null,
-    "lon": null,
-    "status": "approved",
-    "approved_by": "Jush",
-    "approved_at": "2026-11-26T09:21:52.013Z"
   }
 ]
